@@ -15,7 +15,7 @@ public readonly struct TimerData
     }
 }
 
-public class TimerView : BaseUiElementView<TimerData>
+public class TimerView : BaseUiElementView
 {
     [SerializeField] private TMP_Text _timeText;
     [SerializeField] private string _timeFormat = @"hh\:mm\:ss";
@@ -38,7 +38,7 @@ public class TimerController : BaseUiElementController<TimerView, TimerData>, IT
     private double _accumulatedSeconds;
     private double _sinceLastRedraw;
 
-    protected override void OnInitialize(TimerData data)
+    protected override void OnInit(TimerData data)
     {
         _currentTime = data.InitialTime;
         _isIncreasing = data.IsIncreasing;

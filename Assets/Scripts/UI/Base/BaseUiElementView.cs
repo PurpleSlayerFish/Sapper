@@ -1,128 +1,58 @@
 ﻿using System;
-using System.Threading;
-using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using Zenject;
 
-public abstract class BaseUiElementView<TData> : BaseUiElementView
-    where TData : struct
+public abstract class BaseUiElementView : MonoBehaviour, IDisposable
 {
-}
-
-public abstract class BaseUiElementView : MonoBehaviour
-{
-    [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private float _showDuration = 0.15f;
-    [SerializeField] private float _hideDuration = 0.15f;
-
+    public CanvasGroup CanvasGroup;
     private RectTransform _rectTransform;
 
     public RectTransform RectTransform => _rectTransform != null
         ? _rectTransform
         : _rectTransform = (RectTransform)transform;
 
-    public virtual void Initialize()
+    public virtual void Init()
     {
-        if (_canvasGroup == null)
-            return;
-
-        _canvasGroup.alpha = 0f;
-        _canvasGroup.interactable = false;
-        _canvasGroup.blocksRaycasts = false;
-    }
-
-    public virtual async UniTask PlayShowAsync(CancellationToken token)
-    {
-        gameObject.SetActive(true);
-
-        if (_canvasGroup == null)
-            return;
-
-        _canvasGroup.blocksRaycasts = true;
-
-        await _canvasGroup
-            .DOFade(1f, _showDuration)
-            .SetUpdate(UpdateType.Normal, true)
-            .ToUniTask(cancellationToken: token);
-
-        _canvasGroup.interactable = true;
-    }
-
-    public virtual async UniTask PlayHideAsync(CancellationToken token)
-    {
-        if (_canvasGroup != null)
-        {
-            _canvasGroup.interactable = false;
-
-            await _canvasGroup
-                .DOFade(0f, _hideDuration)
-                .SetUpdate(UpdateType.Normal, true)
-                .ToUniTask(cancellationToken: token);
-
-            _canvasGroup.blocksRaycasts = false;
-        }
-
-        gameObject.SetActive(false);
     }
 
     public virtual void Dispose()
     {
-        if (_canvasGroup != null)
-            DOTween.Kill(_canvasGroup);
+        if (CanvasGroup != null)
+            DOTween.Kill(CanvasGroup);
 
         if (this != null)
             Destroy(gameObject);
     }
 }
 
-// Базовый контроллер без данных
-public abstract class BaseUiElementController<TView> : IDisposable
+public abstract class BaseUiElementController<TView> : IUiElementController<TView>, IDisposable
     where TView : BaseUiElementView
 {
-    protected TView View { get; private set; }
+    protected List<IDisposable> Disposables { get; } = new();
+    protected TView View { get; set; }
 
-    private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
+    public void SetActive(bool value)
+    {
+        if (View)
+            View.gameObject.SetActive(value);
+    }
+
     private bool _isDisposed;
 
-    // Пустой конструктор для наследника с датой, полностью переопределяющего инициализацию
-    protected BaseUiElementController()
-    {
-    }
-
-    protected BaseUiElementController(TView view)
+    public void Init(TView view)
     {
         View = view;
-
-        View.Initialize();
-        OnInitialize();
+        View.Init();
+        Disposables.Add(view);
+        OnInit();
+        Refresh();
     }
 
-    // Используется наследником с датой для установки вьюшки без повторной инициализации здесь
-    protected void SetView(TView view) => View = view;
-
-    // Хук для наследников без данных
-    protected virtual void OnInitialize() { }
-
-    public async UniTask Show(CancellationToken token)
-    {
-        if (_isDisposed)
-            throw new ObjectDisposedException(GetType().Name);
-
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _lifetimeCts.Token);
-        await View.PlayShowAsync(linkedCts.Token);
-    }
-
-    public async UniTask Hide(CancellationToken token)
-    {
-        if (_isDisposed)
-            return;
-
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _lifetimeCts.Token);
-        await View.PlayHideAsync(linkedCts.Token);
-    }
-
-    protected virtual void OnDispose() { }
+    public virtual void Refresh() => OnRefresh();
+    protected virtual void OnInit(){}
+    protected virtual void OnRefresh(){}
 
     public void Dispose()
     {
@@ -131,72 +61,64 @@ public abstract class BaseUiElementController<TView> : IDisposable
 
         _isDisposed = true;
 
-        _lifetimeCts.Cancel();
-        _lifetimeCts.Dispose();
-
-        OnDispose();
+        foreach (var disposable in Disposables) 
+            disposable.Dispose();
+        Disposables.Clear();
+        
         View.Dispose();
     }
+    
+    void IUiElementController.AddToDisposables(IDisposable disposable) => Disposables.Add(disposable);
 }
 
-// Контроллер с данными, TData — структура. Полностью переопределяет инициализацию базового класса
-public abstract class BaseUiElementController<TView, TData> : BaseUiElementController<TView>
-    where TView : BaseUiElementView<TData>
-    where TData : struct
+public abstract class BaseUiElementController<TView, TData>
+    : BaseUiElementController<TView>
+    where TView : BaseUiElementView
+{ 
+    protected TData Data { get; set; }
+    public void Init(TView view, TData data)
+    {
+        View = view;
+        View.Init();
+        Data = data;
+        Disposables.Add(view);
+        OnInit(data);
+        Refresh();
+    }
+    protected virtual void OnInit(TData data) { }
+}
+
+public interface IUiElementController
 {
-    protected abstract void OnInitialize(TData data);
+    void SetActive(bool value);
+    internal void AddToDisposables(IDisposable disposable);
 }
 
-public interface IUiElementFactory<TController, TView>
-    where TController : BaseUiElementController<TView>
+public interface IUiElementController<in TView>
+    : IUiElementController
     where TView : BaseUiElementView
 {
-    TController Init(TView view);
-    void Dispose(TController controller);
 }
 
-public interface IUiElementFactory<TController, TView, TData>
-    where TController : BaseUiElementController<TView, TData>
-    where TView : BaseUiElementView<TData>
-    where TData : struct
+public interface IUiElementControllerFactory
 {
-    TController Init(TView view, TData data);
-    void Dispose(TController controller);
+    T Create<T>() where T : class, IUiElementController;
+    IUiElementController Create(Type type);
 }
 
-public class UiElementFactory<TController, TView> : IUiElementFactory<TController, TView>
-    where TController : BaseUiElementController<TView>
-    where TView : BaseUiElementView
+public sealed class UiElementControllerFactory : IUiElementControllerFactory
 {
     private readonly DiContainer _container;
 
-    public UiElementFactory(DiContainer container)
+    public UiElementControllerFactory(DiContainer container)
     {
         _container = container;
     }
 
-    public TController Init(TView view)
-        => _container.Instantiate<TController>(new object[] { view });
+    public T Create<T>() where T : class, IUiElementController => Create(typeof(T)) as T;
 
-    public void Dispose(TController controller)
-        => controller?.Dispose();
-}
-
-public class UiElementFactory<TController, TView, TData> : IUiElementFactory<TController, TView, TData>
-    where TController : BaseUiElementController<TView, TData>
-    where TView : BaseUiElementView
-    where TData : struct
-{
-    private readonly DiContainer _container;
-
-    public UiElementFactory(DiContainer container)
+    public IUiElementController Create(Type type)
     {
-        _container = container;
+        return _container.Instantiate(type) as IUiElementController;
     }
-
-    public TController Init(TView view, TData data)
-        => _container.Instantiate<TController>(new object[] { view, data });
-
-    public void Dispose(TController controller)
-        => controller?.Dispose();
 }

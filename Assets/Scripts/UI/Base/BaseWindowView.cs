@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using JetBrains.Annotations;
+using UI;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Scripting;
 
 public abstract class WindowData
 {
@@ -12,8 +13,8 @@ public abstract class WindowData
 
 public abstract class BaseWindowView : MonoBehaviour
 {
-    [NotNull, SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private Button _closeButton;
+    public UiButtonView CloseButtonView;
+    [RequiredMember, SerializeField] public CanvasGroup CanvasGroup;
     [SerializeField] private float _showDuration = 0.25f;
     [SerializeField] private float _hideDuration = 0.2f;
 
@@ -22,44 +23,43 @@ public abstract class BaseWindowView : MonoBehaviour
     public RectTransform RectTransform => _rectTransform != null
         ? _rectTransform
         : _rectTransform = (RectTransform)transform;
-    public Button CloseButton => _closeButton;
 
     public virtual void Initialize()
     {
-        _canvasGroup.alpha = 0f;
-        _canvasGroup.interactable = false;
-        _canvasGroup.blocksRaycasts = false;
+        CanvasGroup.alpha = 0f;
+        CanvasGroup.interactable = false;
+        CanvasGroup.blocksRaycasts = false;
     }
 
     public virtual async UniTask PlayShowAsync(CancellationToken token)
     {
         gameObject.SetActive(true);
-        _canvasGroup.blocksRaycasts = true;
+        CanvasGroup.blocksRaycasts = true;
 
-        await _canvasGroup
+        await CanvasGroup
             .DOFade(1f, _showDuration)
             .SetUpdate(UpdateType.Normal, true)
             .ToUniTask(cancellationToken: token);
 
-        _canvasGroup.interactable = true;
+        CanvasGroup.interactable = true;
     }
 
     public virtual async UniTask PlayHideAsync(CancellationToken token)
     {
-        _canvasGroup.interactable = false;
+        CanvasGroup.interactable = false;
 
-        await _canvasGroup
+        await CanvasGroup
             .DOFade(0f, _hideDuration)
             .SetUpdate(UpdateType.Normal, true)
             .ToUniTask(cancellationToken: token);
 
-        _canvasGroup.blocksRaycasts = false;
+        CanvasGroup.blocksRaycasts = false;
         gameObject.SetActive(false);
     }
 
     public virtual void Dispose()
     {
-        DOTween.Kill(_canvasGroup);
+        DOTween.Kill(CanvasGroup);
         if (this != null)
             Destroy(gameObject);
     }
@@ -79,6 +79,7 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
 {
     protected readonly TView View;
     protected readonly TData Data;
+    protected List<IDisposable> Disposables { get; } = new();
 
     private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
 
@@ -102,8 +103,8 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
 
     protected virtual void OnInitialize()
     {
-        if (View.CloseButton != null)
-            View.CloseButton.onClick.AddListener(HandleCloseRequested);
+        if (View.CloseButtonView)
+            View.CloseButtonView.Subscribe(HandleCloseRequested);
     }
 
     private void HandleCloseRequested() => Close(_lifetimeCts.Token).Forget();
@@ -161,11 +162,13 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
 
         _isDisposed = true;
 
-        View.CloseButton.onClick.RemoveAllListeners();
-
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
 
+        foreach (var disposable in Disposables) 
+            disposable.Dispose();
+        Disposables.Clear();
+        
         OnDispose();
         View.Dispose();
     }

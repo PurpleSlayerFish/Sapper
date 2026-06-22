@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using UI;
 using UnityEngine.UI;
 using Zenject;
 
@@ -8,14 +8,14 @@ public class PauseWindowData : WindowData
 
 public class PauseWindowView : BaseWindowView
 {
-    public Button RestartButton;
-    public Button MainMenuButton;
+    public UiButtonView RestartButtonView;
+    public UiButtonView MainMenuButtonView;
     public ReferenceButtonInterceptorView ReferenceButtonInterceptorView;
 }
 
 public class PauseWindowController : BaseWindowController<PauseWindowView, PauseWindowData>
 {
-    [Inject] private IUiElementFactory<ReferenceButtonInterceptorController, ReferenceButtonInterceptorView> _interceptorFactory;
+    [Inject] private IUiElementControllerFactory _interceptorFactory;
 
     private ReferenceButtonInterceptorController _interceptorController;
 
@@ -23,14 +23,18 @@ public class PauseWindowController : BaseWindowController<PauseWindowView, Pause
     {
         base.OnInitialize();
 
-        if (View.RestartButton != null)
-            View.RestartButton.onClick.AddListener(HandleRestartClicked);
+        if (View.RestartButtonView != null)
+            Disposables.Add(View.RestartButtonView.Subscribe(HandleRestartClicked));
 
-        if (View.MainMenuButton != null)
-            View.MainMenuButton.onClick.AddListener(HandleMainMenuClicked);
+        if (View.MainMenuButtonView != null)
+            Disposables.Add(View.MainMenuButtonView.Subscribe(HandleMainMenuClicked));
 
-        if (View.ReferenceButtonInterceptorView != null) 
-            _interceptorController = _interceptorFactory.Init(View.ReferenceButtonInterceptorView);
+        if (View.ReferenceButtonInterceptorView != null)
+        {
+            _interceptorController = _interceptorFactory.Create<ReferenceButtonInterceptorController>();
+            _interceptorController.Init(View.ReferenceButtonInterceptorView);
+            Disposables.Add(_interceptorController);
+        } 
     }
 
     private void HandleRestartClicked()
@@ -41,19 +45,5 @@ public class PauseWindowController : BaseWindowController<PauseWindowView, Pause
     private void HandleMainMenuClicked()
     {
         // TODO: переход в главное меню
-    }
-
-    protected override void OnDispose()
-    {
-        if (View.RestartButton != null)
-            View.RestartButton.onClick.RemoveListener(HandleRestartClicked);
-
-        if (View.MainMenuButton != null)
-            View.MainMenuButton.onClick.RemoveListener(HandleMainMenuClicked);
-
-        if (_interceptorController != null)
-            _interceptorFactory.Dispose(_interceptorController);
-
-        base.OnDispose();
     }
 }

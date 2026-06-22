@@ -50,8 +50,8 @@ public sealed class WindowService : IInitializable, IDisposable
     [Inject] private DiContainer _container;
     [Inject(Id = "WindowsRoot")] private Transform _windowsRoot;
 
-    private readonly LinkedList<WindowNode> _windows = new LinkedList<WindowNode>();
-    private readonly CancellationTokenSource _serviceCts = new CancellationTokenSource();
+    private readonly LinkedList<WindowNode> _windows = new();
+    private readonly CancellationTokenSource _serviceCts = new();
 
     private LoadingWindowController _loadingScreen;
 
