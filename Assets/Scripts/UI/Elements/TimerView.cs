@@ -38,10 +38,10 @@ public class TimerController : BaseUiElementController<TimerView, TimerData>, IT
     private double _accumulatedSeconds;
     private double _sinceLastRedraw;
 
-    protected override void OnInit(TimerData data)
+    public override void OnAfterInit()
     {
-        _currentTime = data.InitialTime;
-        _isIncreasing = data.IsIncreasing;
+        _currentTime = Data.InitialTime;
+        _isIncreasing = Data.IsIncreasing;
         _isRunning = false;
         _accumulatedSeconds = 0d;
         _sinceLastRedraw = 0d;

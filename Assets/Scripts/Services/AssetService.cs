@@ -69,3 +69,9 @@ public sealed class WindowsAssetService : AssetService
 
     protected override string Section => SectionName;
 }
+
+public sealed class CommonAssetService : AssetService
+{
+    private const string SectionName = "Common";
+    protected override string Section => SectionName;
+}

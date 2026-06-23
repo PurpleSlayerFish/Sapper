@@ -9,10 +9,10 @@ public class ReferenceButtonInterceptorView : BaseUiElementView
 
 public class ReferenceButtonInterceptorController : BaseUiElementController<ReferenceButtonInterceptorView>
 {
-    protected override void OnInit()
+    public override void OnAfterInit()
     {
         if (View.SelfButton != null)
-            View.SelfButton.Subscribe(HandleSelfButtonClicked);
+            Disposables.Add(View.SelfButton.Subscribe(HandleSelfButtonClicked));
     }
 
     private void HandleSelfButtonClicked()

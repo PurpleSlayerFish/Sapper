@@ -27,32 +27,23 @@ public abstract class BaseUiElementView : MonoBehaviour, IDisposable
     }
 }
 
-public abstract class BaseUiElementController<TView> : IUiElementController<TView>, IDisposable
+public abstract class AbstractUiElementController<TView> : IUiElementController<TView>, IDisposable
     where TView : BaseUiElementView
 {
+    private bool _isDisposed;
     protected List<IDisposable> Disposables { get; } = new();
-    protected TView View { get; set; }
+    public TView View { get; protected set; }
+
+    public virtual void Refresh() => OnRefresh();
+    protected virtual void OnRefresh(){}
+    public abstract void OnAfterInit();
+
 
     public void SetActive(bool value)
     {
         if (View)
             View.gameObject.SetActive(value);
     }
-
-    private bool _isDisposed;
-
-    public void Init(TView view)
-    {
-        View = view;
-        View.Init();
-        Disposables.Add(view);
-        OnInit();
-        Refresh();
-    }
-
-    public virtual void Refresh() => OnRefresh();
-    protected virtual void OnInit(){}
-    protected virtual void OnRefresh(){}
 
     public void Dispose()
     {
@@ -67,37 +58,58 @@ public abstract class BaseUiElementController<TView> : IUiElementController<TVie
         
         View.Dispose();
     }
-    
-    void IUiElementController.AddToDisposables(IDisposable disposable) => Disposables.Add(disposable);
 }
 
-public abstract class BaseUiElementController<TView, TData>
-    : BaseUiElementController<TView>
+public abstract class BaseUiElementController<TView> : AbstractUiElementController<TView>, IUiElementControllerWithView<TView>
     where TView : BaseUiElementView
-{ 
-    protected TData Data { get; set; }
-    public void Init(TView view, TData data)
+{
+    public void Init(TView view)
     {
         View = view;
         View.Init();
-        Data = data;
-        Disposables.Add(view);
-        OnInit(data);
+        OnAfterInit();
         Refresh();
     }
-    protected virtual void OnInit(TData data) { }
+}
+
+public abstract class BaseUiElementController<TView, TData> : AbstractUiElementController<TView>, IUiElementControllerWithViewAndData<TView,TData>
+    where TView : BaseUiElementView
+{ 
+    public TData Data { get; protected set; }
+
+    public void Init(TView view, TData data)
+    {
+        Data = data;
+        View = view;
+        View.Init();
+        OnAfterInit();
+        Refresh();
+    }
 }
 
 public interface IUiElementController
 {
-    void SetActive(bool value);
-    internal void AddToDisposables(IDisposable disposable);
 }
 
-public interface IUiElementController<in TView>
-    : IUiElementController
+public interface IUiElementController<TView> : IUiElementController
     where TView : BaseUiElementView
 {
+    TView View { get; }
+    void SetActive(bool value);
+    void OnAfterInit();
+}
+
+public interface IUiElementControllerWithView<TView> : IUiElementController<TView>
+    where TView : BaseUiElementView
+{
+    void Init(TView  view);
+}
+
+public interface IUiElementControllerWithViewAndData<TView, TData> : IUiElementController<TView>
+    where TView : BaseUiElementView
+{
+    TData Data { get; }
+    void Init(TView  view, TData data);
 }
 
 public interface IUiElementControllerFactory

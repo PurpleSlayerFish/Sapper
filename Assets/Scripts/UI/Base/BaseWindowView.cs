@@ -6,6 +6,8 @@ using DG.Tweening;
 using UI;
 using UnityEngine;
 using UnityEngine.Scripting;
+using UnityEngine.UI;
+using Zenject;
 
 public abstract class WindowData
 {
@@ -13,12 +15,18 @@ public abstract class WindowData
 
 public abstract class BaseWindowView : MonoBehaviour
 {
-    public UiButtonView CloseButtonView;
-    [RequiredMember, SerializeField] public CanvasGroup CanvasGroup;
+    [SerializeField] private UiButtonView _closeButtonView;
+    [RequiredMember, SerializeField] private CanvasGroup _canvasGroup;
+    [RequiredMember, SerializeField] private Canvas _canvas;
+    [RequiredMember, SerializeField] private GraphicRaycaster _graphicRaycaster;
     [SerializeField] private float _showDuration = 0.25f;
     [SerializeField] private float _hideDuration = 0.2f;
 
     private RectTransform _rectTransform;
+
+    public Canvas Canvas => _canvas;
+    public GraphicRaycaster GraphicRaycaster => _graphicRaycaster;
+    public UiButtonView CloseButtonView => _closeButtonView;
 
     public RectTransform RectTransform => _rectTransform != null
         ? _rectTransform
@@ -26,40 +34,56 @@ public abstract class BaseWindowView : MonoBehaviour
 
     public virtual void Initialize()
     {
-        CanvasGroup.alpha = 0f;
-        CanvasGroup.interactable = false;
-        CanvasGroup.blocksRaycasts = false;
+        _canvasGroup.alpha = 0f;
+        _canvasGroup.interactable = false;
+        _canvasGroup.blocksRaycasts = false;
+    }
+
+    public void SetCamera(Camera uiCamera)
+    {
+        if (_canvas == null)
+            return;
+
+        _canvas.worldCamera = uiCamera;
+        _canvas.renderMode = RenderMode.ScreenSpaceCamera;
     }
 
     public virtual async UniTask PlayShowAsync(CancellationToken token)
     {
         gameObject.SetActive(true);
-        CanvasGroup.blocksRaycasts = true;
+        _canvasGroup.blocksRaycasts = true;
 
-        await CanvasGroup
+        if (_graphicRaycaster != null)
+            _graphicRaycaster.enabled = true;
+
+        await _canvasGroup
             .DOFade(1f, _showDuration)
             .SetUpdate(UpdateType.Normal, true)
             .ToUniTask(cancellationToken: token);
 
-        CanvasGroup.interactable = true;
+        _canvasGroup.interactable = true;
     }
 
     public virtual async UniTask PlayHideAsync(CancellationToken token)
     {
-        CanvasGroup.interactable = false;
+        _canvasGroup.interactable = false;
 
-        await CanvasGroup
+        await _canvasGroup
             .DOFade(0f, _hideDuration)
             .SetUpdate(UpdateType.Normal, true)
             .ToUniTask(cancellationToken: token);
 
-        CanvasGroup.blocksRaycasts = false;
+        _canvasGroup.blocksRaycasts = false;
+
+        if (_graphicRaycaster != null)
+            _graphicRaycaster.enabled = false;
+
         gameObject.SetActive(false);
     }
 
     public virtual void Dispose()
     {
-        DOTween.Kill(CanvasGroup);
+        DOTween.Kill(_canvasGroup);
         if (this != null)
             Destroy(gameObject);
     }
@@ -77,6 +101,8 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
     where TView : BaseWindowView
     where TData : WindowData
 {
+    [Inject] private UiCameraService _uiCameraService;
+
     protected readonly TView View;
     protected readonly TData Data;
     protected List<IDisposable> Disposables { get; } = new();
@@ -85,7 +111,7 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
 
     private bool _isShown;
     private bool _isDisposed;
-    
+
     public RectTransform ViewTransform => View.RectTransform;
 
     protected BaseWindowController(TView view, TData data)
@@ -103,8 +129,12 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
 
     protected virtual void OnInitialize()
     {
+        // Устанавливаем UI-камеру для канваса окна
+        if (_uiCameraService?.Camera != null)
+            View.SetCamera(_uiCameraService.Camera);
+
         if (View.CloseButtonView)
-            View.CloseButtonView.Subscribe(HandleCloseRequested);
+            Disposables.Add(View.CloseButtonView.Subscribe(HandleCloseRequested));
     }
 
     private void HandleCloseRequested() => Close(_lifetimeCts.Token).Forget();
@@ -165,10 +195,10 @@ public abstract class BaseWindowController<TView, TData> : IWindowController
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
 
-        foreach (var disposable in Disposables) 
+        foreach (var disposable in Disposables)
             disposable.Dispose();
         Disposables.Clear();
-        
+
         OnDispose();
         View.Dispose();
     }
