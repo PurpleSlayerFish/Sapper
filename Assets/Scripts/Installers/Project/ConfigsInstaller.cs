@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+﻿using Installers.Scene;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Zenject;
 
-namespace Installers
+namespace Installers.Project
 {
-    public sealed class ConfigsInstaller : MonoInstaller
+    public sealed class ConfigsInstaller : Installer<GameCycleInstaller>
     {
         private const string ConfigsLabel = "Configs";
 

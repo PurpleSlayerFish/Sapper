@@ -1,4 +1,5 @@
-﻿using Services;
+﻿using Model.Entities;
+using Services;
 using UnityEngine;
 
 namespace Model.Signals

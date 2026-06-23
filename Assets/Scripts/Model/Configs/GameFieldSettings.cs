@@ -9,16 +9,23 @@ namespace Model.Configs
         public Vector2 OriginWorld;
         public float CellSize = 1f;
 
-        [Min(2)] public int Columns = 9;
-        [Min(2)] public int Rows    = 9;
+        [Range(2,50)] public int Columns = 9;
+        [Range(2,50)] public int Rows    = 9;
+        [Min(1)] public int MineCount = 10;
 
-        public AssetReferenceGameObject CellViewPrefab;
+        public int MaxMineCount => (Columns * Rows) / 2;
 
         public AssetReferenceSprite SpriteHidden;
         public AssetReferenceSprite SpriteFlagged;
         public AssetReferenceSprite SpriteMine;
         public AssetReferenceSprite SpriteRevealed;
-        // Индекс 0 = 1 мина, ..., 7 = 8 мин
         public AssetReferenceSprite[] SpriteNumbers = new AssetReferenceSprite[8];
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            MineCount = Mathf.Clamp(MineCount, 1, MaxMineCount);
+        }
+#endif
     }
 }

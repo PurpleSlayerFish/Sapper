@@ -1,4 +1,4 @@
-﻿namespace Model
+﻿namespace Model.Entities
 {
     public sealed class GameFieldModel
     {

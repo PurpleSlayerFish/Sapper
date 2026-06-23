@@ -1,71 +1,70 @@
-﻿using TMPro;
-using UI;
+﻿using Cysharp.Threading.Tasks;
+using Services;
+using TMPro;
+using UI.Base;
 using UnityEngine;
 using Zenject;
 
-public class GameOverWindowData : WindowData
+namespace UI.Windows
 {
-    public readonly string Message;
-
-    public GameOverWindowData(string message)
+    public class GameOverWindowData : WindowData
     {
-        Message = message;
-    }
-}
+        public readonly string Message;
 
-public class GameOverWindowView : BaseWindowView
-{
-    public TMP_Text MessageText;
-    public UiButtonView RestartButton;
-    public UiButtonView MainMenuButton;
-}
-
-public class GameOverWindowController : BaseWindowController<GameOverWindowView, GameOverWindowData>, ITickable
-{
-    protected override void OnInitialize()
-    {
-        base.OnInitialize();
-
-        if (View.MessageText != null)
-            View.MessageText.text = Data.Message;
-
-        if (View.RestartButton != null)
-            Disposables.Add(View.RestartButton.Subscribe(HandleRestartClicked));
-
-        if (View.MainMenuButton != null)
-            Disposables.Add(View.MainMenuButton.Subscribe(HandleMainMenuClicked));
+        public GameOverWindowData(string message)
+        {
+            Message = message;
+        }
     }
 
-    // Проверка нажатия любой клавиши через ITickable подключается в инсталлере,
-    // здесь используем Update через хук OnAfterShow/OnBeforeHide через флаг
-    private bool _listeningInput;
-
-    protected override void OnAfterShow()
+    public class GameOverWindowView : BaseWindowView
     {
-        _listeningInput = true;
+        public TMP_Text MessageText;
+        public UiButtonView RestartButton;
+        public UiButtonView MainMenuButton;
     }
 
-    protected override void OnBeforeHide()
+    public class GameOverWindowController : BaseWindowController<GameOverWindowView, GameOverWindowData>, ITickable
     {
-        _listeningInput = false;
-    }
+        [Inject] private GameCycleService _gameCycleService;
+        private bool _listeningInput;
 
-    public void Tick()
-    {
-        if (!_listeningInput)
-            return;
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
 
-        if (Input.anyKeyDown)
-            HandleRestartClicked();
-    }
+            if (View.MessageText != null)
+                View.MessageText.text = Data.Message;
 
-    private void HandleRestartClicked()
-    {
-        // TODO: рестарт уровня
-    }
+            if (View.RestartButton != null)
+                Disposables.Add(View.RestartButton.Subscribe(HandleRestartClicked));
 
-    private void HandleMainMenuClicked()
-    {
-        // TODO: переход в главное меню
+            if (View.MainMenuButton != null)
+                Disposables.Add(View.MainMenuButton.Subscribe(HandleMainMenuClicked));
+        }
+
+
+        protected override void OnAfterShow()
+        {
+            _listeningInput = true;
+        }
+
+        protected override void OnBeforeHide()
+        {
+            _listeningInput = false;
+        }
+
+        public void Tick()
+        {
+            if (!_listeningInput)
+                return;
+
+            if (Input.anyKeyDown)
+                HandleRestartClicked();
+        }
+
+        private void HandleRestartClicked() => _gameCycleService.TransitionTo(GameState.Game).Forget();
+
+        private void HandleMainMenuClicked() => _gameCycleService.TransitionTo(GameState.Menu).Forget();
     }
 }

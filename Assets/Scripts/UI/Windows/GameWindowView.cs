@@ -1,59 +1,65 @@
-﻿using UI;
+﻿using Common;
+using Cysharp.Threading.Tasks;
+using Services;
+using UI.Base;
+using UI.Elements;
 using Zenject;
 
-public class GameWindowData : WindowData
+namespace UI.Windows
 {
-}
-
-public class GameWindowView : BaseWindowView
-{
-    public TimerView TimerView;
-    public UiButtonView MenuButtonView;
-}
-
-public class GameWindowController : BaseWindowController<GameWindowView, GameWindowData>
-{
-    [Inject] private IControllerFactory _timerFactory;
-    [Inject] private WindowService _windowService;
-
-    private TimerController _timerController;
-
-    protected override void OnInitialize()
+    public class GameWindowData : WindowData
     {
-        base.OnInitialize();
-
-        _timerController = _timerFactory.Create<TimerController>();
-        _timerController.Init(View.TimerView, new TimerData());
-
-        if (View.MenuButtonView != null)
-            Disposables.Add(View.MenuButtonView.Subscribe(HandleMenuButtonClicked));
     }
 
-    private void HandleMenuButtonClicked()
+    public class GameWindowView : BaseWindowView
     {
-        // TODO: окно меню будет реализовано позже
-        // _windowService.Show<MenuWindowData>(new MenuWindowData()).Forget();
+        public TimerView TimerView;
+        public UiButtonView MenuButtonView;
     }
 
-    protected override void OnAfterShow()
+    public class GameWindowController : BaseWindowController<GameWindowView, GameWindowData>
     {
-        base.OnAfterShow();
-        _timerController.Start();
-    }
+        [Inject] private IControllerFactory _timerFactory;
+        [Inject] private WindowService _windowService;
 
-    protected override void OnBeforeHide()
-    {
-        base.OnBeforeHide();
-        _timerController.Pause();
-    }
+        private TimerController _timerController;
 
-    protected override void OnDispose()
-    {
-        if (!View.MenuButtonView)
-            View.MenuButtonView.Unsubscribe(HandleMenuButtonClicked);
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
 
-        _timerController.Dispose();
+            _timerController = _timerFactory.Create<TimerController>();
+            _timerController.Init(View.TimerView, new TimerData());
 
-        base.OnDispose();
+            if (View.MenuButtonView != null)
+                Disposables.Add(View.MenuButtonView.Subscribe(HandleMenuButtonClicked));
+        }
+
+        private void HandleMenuButtonClicked()
+        {
+            _windowService.Show(new PauseWindowData(), token: LifetimeCts.Token).Forget();
+        }
+
+        protected override void OnAfterShow()
+        {
+            base.OnAfterShow();
+            _timerController.Start();
+        }
+
+        protected override void OnBeforeHide()
+        {
+            base.OnBeforeHide();
+            _timerController.Pause();
+        }
+
+        protected override void OnDispose()
+        {
+            if (!View.MenuButtonView)
+                View.MenuButtonView.Unsubscribe(HandleMenuButtonClicked);
+
+            _timerController.Dispose();
+
+            base.OnDispose();
+        }
     }
 }

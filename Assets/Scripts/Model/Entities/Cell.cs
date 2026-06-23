@@ -1,4 +1,4 @@
-﻿namespace Model
+﻿namespace Model.Entities
 {
     public enum CellState { Hidden, Revealed, Flagged }
 

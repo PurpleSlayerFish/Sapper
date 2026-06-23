@@ -1,41 +1,43 @@
-﻿using UI;
-using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using Services;
+using UI.Base;
 using Zenject;
 
-public class MainMenuWindowData : WindowData
+namespace UI.Windows
 {
-}
-
-public class MainMenuWindowView : BaseWindowView
-{
-    public UiButtonView StartButton;
-    public UiButtonView ExitButton;
-}
-
-public class MainMenuWindowController : BaseWindowController<MainMenuWindowView, MainMenuWindowData>
-{
-    protected override void OnInitialize()
+    public class MainMenuWindowData : WindowData
     {
-        base.OnInitialize();
-
-        if (View.StartButton != null)
-            Disposables.Add(View.StartButton.Subscribe(HandleStartClicked));
-
-        if (View.ExitButton != null)
-            Disposables.Add(View.ExitButton.Subscribe(HandleExitClicked));
     }
 
-    private void HandleStartClicked()
+    public class MainMenuWindowView : BaseWindowView
     {
-        // TODO: запуск игры
+        public UiButtonView StartButton;
+        public UiButtonView ExitButton;
     }
 
-    private void HandleExitClicked()
+    public class MainMenuWindowController : BaseWindowController<MainMenuWindowView, MainMenuWindowData>
     {
+        [Inject] private GameCycleService _gameCycleService;
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            if (View.StartButton != null)
+                Disposables.Add(View.StartButton.Subscribe(HandleStartClicked));
+
+            if (View.ExitButton != null)
+                Disposables.Add(View.ExitButton.Subscribe(HandleExitClicked));
+        }
+
+        private void HandleStartClicked() => _gameCycleService.TransitionTo(GameState.Game).Forget();
+
+        private void HandleExitClicked()
+        {
 #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
+            UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif
+        }
     }
 }

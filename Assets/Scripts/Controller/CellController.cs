@@ -1,4 +1,6 @@
-﻿using Model;
+﻿using Common;
+using Model;
+using Model.Entities;
 using UnityEngine;
 using View;
 

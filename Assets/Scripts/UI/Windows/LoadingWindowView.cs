@@ -1,14 +1,19 @@
-﻿using Zenject;
+﻿using Services;
+using UI.Base;
+using Zenject;
 
-public class LoadingWindowData : WindowData
+namespace UI.Windows
 {
-}
+    public class LoadingWindowData : WindowData
+    {
+    }
 
-public class LoadingWindowView : BaseWindowView
-{
-}
+    public class LoadingWindowView : BaseWindowView
+    {
+    }
 
-public class LoadingWindowController : BaseWindowController<LoadingWindowView, LoadingWindowData>
-{
-    [Inject] private WindowService _windowService;
+    public class LoadingWindowController : BaseWindowController<LoadingWindowView, LoadingWindowData>
+    {
+        [Inject] private WindowService _windowService;
+    }
 }

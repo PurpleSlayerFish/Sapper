@@ -2,235 +2,237 @@
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UI.Base;
+using UI.Windows;
 using UnityEngine;
 using Zenject;
 
-public abstract class WindowControllerFactory
+namespace Services
 {
-    protected readonly DiContainer Container;
-
-    protected WindowControllerFactory(DiContainer container)
+    public abstract class WindowControllerFactory
     {
-        Container = container;
-    }
+        protected readonly DiContainer Container;
 
-    public abstract UniTask<IWindowController> Create<TData>(TData data, CancellationToken token)
-        where TData : WindowData;
-}
-
-public class WindowControllerFactoryById : WindowControllerFactory
-{
-    public WindowControllerFactoryById(DiContainer container) : base(container)
-    {
-    }
-
-    public override UniTask<IWindowController> Create<TData>(TData data, CancellationToken token)
-        => Container.ResolveId<Func<TData, CancellationToken, UniTask<IWindowController>>>(typeof(TData))
-            .Invoke(data, token);
-}
-
-internal sealed class WindowNode
-{
-    public readonly IWindowController Controller;
-    public readonly Type DataType;
-    public readonly bool IsMultiple;
-
-    public WindowNode(IWindowController controller, Type dataType, bool isMultiple)
-    {
-        Controller = controller;
-        DataType = dataType;
-        IsMultiple = isMultiple;
-    }
-}
-
-public sealed class WindowService : IInitializable, IDisposable
-{
-    [Inject] private WindowControllerFactory _windowFactory;
-    [Inject] private WindowsAssetService _windowsAssetService;
-    [Inject] private DiContainer _container;
-    [Inject(Id = "WindowsRoot")] private Transform _windowsRoot;
-
-    private readonly LinkedList<WindowNode> _windows = new();
-    private readonly CancellationTokenSource _serviceCts = new();
-
-    private LoadingWindowController _loadingScreen;
-
-    public void Initialize()
-    {
-        InitLoadingScreen(_serviceCts.Token).Forget();
-    }
-
-    private async UniTaskVoid InitLoadingScreen(CancellationToken token)
-    {
-        var view = await _windowsAssetService.Instantiate<LoadingWindowView>(_windowsRoot, token);
-        _loadingScreen = _container.Instantiate<LoadingWindowController>(
-            new object[] { view, new LoadingWindowData() });
-
-        BringToFront(_loadingScreen);
-    }
-
-    public async UniTask Show<TData>(
-        TData data,
-        bool isMultiple = false,
-        bool needLoadingScreen = false,
-        Action onLoadingComplete = null,
-        CancellationToken token = default)
-        where TData : WindowData
-    {
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _serviceCts.Token);
-
-        if (needLoadingScreen)
-            await ShowWithLoadingScreen(data, isMultiple, onLoadingComplete, linkedCts.Token);
-        else
-            await ShowInternal(data, isMultiple, onLoadingComplete, linkedCts.Token);
-    }
-
-    private async UniTask ShowWithLoadingScreen<TData>(
-        TData data,
-        bool isMultiple,
-        Action onLoadingComplete,
-        CancellationToken token)
-        where TData : WindowData
-    {
-        BringToFront(_loadingScreen);
-        await _loadingScreen.Show(token);
-
-        var controller = await PrepareWindow(data, isMultiple, token);
-        onLoadingComplete?.Invoke();
-
-        BringToFront(controller);
-        await controller.Show(token);
-
-        await _loadingScreen.Hide(token);
-    }
-
-    private async UniTask ShowInternal<TData>(
-        TData data,
-        bool isMultiple,
-        Action onLoadingComplete,
-        CancellationToken token)
-        where TData : WindowData
-    {
-        var controller = await PrepareWindow(data, isMultiple, token);
-        onLoadingComplete?.Invoke();
-
-        BringToFront(controller);
-        await controller.Show(token);
-    }
-
-    private async UniTask<IWindowController> PrepareWindow<TData>(TData data, bool isMultiple, CancellationToken token)
-        where TData : WindowData
-    {
-        if (!isMultiple)
+        protected WindowControllerFactory(DiContainer container)
         {
-            var existingNode = FindNode(typeof(TData));
-            if (existingNode != null)
-            {
-                if (existingNode != _windows.Last)
-                {
-                    _windows.Remove(existingNode);
-                    _windows.AddLast(existingNode);
-                }
+            Container = container;
+        }
 
-                await HidePrevious(existingNode, token);
-                return existingNode.Value.Controller;
+        public abstract UniTask<IWindowController> Create<TData>(TData data, CancellationToken token)
+            where TData : WindowData;
+    }
+
+    public class WindowControllerFactoryById : WindowControllerFactory
+    {
+        public WindowControllerFactoryById(DiContainer container) : base(container)
+        {
+        }
+
+        public override UniTask<IWindowController> Create<TData>(TData data, CancellationToken token)
+            => Container.ResolveId<Func<TData, CancellationToken, UniTask<IWindowController>>>(typeof(TData))
+                .Invoke(data, token);
+    }
+
+    internal sealed class WindowNode
+    {
+        public readonly IWindowController Controller;
+        public readonly Type DataType;
+        public readonly bool IsMultiple;
+
+        public WindowNode(IWindowController controller, Type dataType, bool isMultiple)
+        {
+            Controller = controller;
+            DataType = dataType;
+            IsMultiple = isMultiple;
+        }
+    }
+
+    public sealed class WindowService : IInitializable, IDisposable
+    {
+        [Inject] private WindowControllerFactory _windowFactory;
+        [Inject] private WindowsAssetService _windowsAssetService;
+        [Inject] private DiContainer _container;
+        [Inject] private AppLifetimeTokenService _appToken;
+        [Inject(Id = "WindowsRoot")] private Transform _windowsRoot;
+
+        private readonly LinkedList<WindowNode> _windows = new();
+
+        private LoadingWindowController _loadingScreen;
+
+        public void Initialize()
+        {
+            InitLoadingScreen(_appToken.Token).Forget();
+        }
+
+        private async UniTaskVoid InitLoadingScreen(CancellationToken token)
+        {
+            var view = await _windowsAssetService.Instantiate<LoadingWindowView>(_windowsRoot, token);
+            _loadingScreen = _container.Instantiate<LoadingWindowController>(
+                new object[] { view, new LoadingWindowData() });
+
+            BringToFront(_loadingScreen);
+        }
+
+        public async UniTask Show<TData>(
+            TData data,
+            bool isMultiple = false,
+            bool needLoadingScreen = false,
+            Action onLoadingComplete = null,
+            CancellationToken token = default)
+            where TData : WindowData
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);
+
+            if (needLoadingScreen)
+                await ShowWithLoadingScreen(data, isMultiple, onLoadingComplete, linkedCts.Token);
+            else
+                await ShowInternal(data, isMultiple, onLoadingComplete, linkedCts.Token);
+        }
+
+        private async UniTask ShowWithLoadingScreen<TData>(
+            TData data,
+            bool isMultiple,
+            Action onLoadingComplete,
+            CancellationToken token)
+            where TData : WindowData
+        {
+            BringToFront(_loadingScreen);
+            await _loadingScreen.Show(token);
+
+            var controller = await PrepareWindow(data, isMultiple, token);
+            onLoadingComplete?.Invoke();
+
+            BringToFront(controller);
+            await controller.Show(token);
+
+            await _loadingScreen.Hide(token);
+        }
+
+        private async UniTask ShowInternal<TData>(
+            TData data,
+            bool isMultiple,
+            Action onLoadingComplete,
+            CancellationToken token)
+            where TData : WindowData
+        {
+            var controller = await PrepareWindow(data, isMultiple, token);
+            onLoadingComplete?.Invoke();
+
+            BringToFront(controller);
+            await controller.Show(token);
+        }
+
+        private async UniTask<IWindowController> PrepareWindow<TData>(TData data, bool isMultiple, CancellationToken token)
+            where TData : WindowData
+        {
+            if (!isMultiple)
+            {
+                var existingNode = FindNode(typeof(TData));
+                if (existingNode != null)
+                {
+                    if (existingNode != _windows.Last)
+                    {
+                        _windows.Remove(existingNode);
+                        _windows.AddLast(existingNode);
+                    }
+
+                    await HidePrevious(existingNode, token);
+                    return existingNode.Value.Controller;
+                }
+            }
+
+            var previousLast = _windows.Last;
+
+            var controller = await _windowFactory.Create(data, token);
+            var node = new WindowNode(controller, typeof(TData), isMultiple);
+
+            _windows.AddLast(node);
+
+            if (previousLast != null)
+                await previousLast.Value.Controller.Hide(token);
+
+            return controller;
+        }
+
+        public async UniTask Close<TData>(CancellationToken token = default) where TData : WindowData
+            => await CloseInternal(typeof(TData), token);
+
+        public async UniTask CloseTop(CancellationToken token = default)
+        {
+            var node = _windows.Last;
+            if (node == null)
+                return;
+
+            await CloseNode(node, token);
+        }
+
+        private async UniTask CloseInternal(Type dataType, CancellationToken token)
+        {
+            var node = FindLastNode(dataType);
+            if (node == null)
+                return;
+
+            await CloseNode(node, token);
+        }
+
+        private async UniTask CloseNode(LinkedListNode<WindowNode> node, CancellationToken token)
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);
+
+            var wasLast = node == _windows.Last;
+            var previous = node.Previous;
+
+            _windows.Remove(node);
+            await node.Value.Controller.Close(linkedCts.Token);
+
+            if (wasLast && previous != null)
+            {
+                BringToFront(previous.Value.Controller);
+                await previous.Value.Controller.Show(linkedCts.Token);
             }
         }
 
-        var previousLast = _windows.Last;
-
-        var controller = await _windowFactory.Create(data, token);
-        var node = new WindowNode(controller, typeof(TData), isMultiple);
-
-        _windows.AddLast(node);
-
-        if (previousLast != null)
-            await previousLast.Value.Controller.Hide(token);
-
-        return controller;
-    }
-
-    public async UniTask Close<TData>(CancellationToken token = default) where TData : WindowData
-        => await CloseInternal(typeof(TData), token);
-
-    public async UniTask CloseTop(CancellationToken token = default)
-    {
-        var node = _windows.Last;
-        if (node == null)
-            return;
-
-        await CloseNode(node, token);
-    }
-
-    private async UniTask CloseInternal(Type dataType, CancellationToken token)
-    {
-        var node = FindLastNode(dataType);
-        if (node == null)
-            return;
-
-        await CloseNode(node, token);
-    }
-
-    private async UniTask CloseNode(LinkedListNode<WindowNode> node, CancellationToken token)
-    {
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _serviceCts.Token);
-
-        var wasLast = node == _windows.Last;
-        var previous = node.Previous;
-
-        _windows.Remove(node);
-        await node.Value.Controller.Close(linkedCts.Token);
-
-        if (wasLast && previous != null)
+        private async UniTask HidePrevious(LinkedListNode<WindowNode> node, CancellationToken token)
         {
-            BringToFront(previous.Value.Controller);
-            await previous.Value.Controller.Show(linkedCts.Token);
-        }
-    }
-
-    private async UniTask HidePrevious(LinkedListNode<WindowNode> node, CancellationToken token)
-    {
-        var previous = node.Previous;
-        if (previous != null)
-            await previous.Value.Controller.Hide(token);
-    }
-
-    private void BringToFront(IWindowController controller)
-        => controller.ViewTransform.SetAsLastSibling();
-
-    private LinkedListNode<WindowNode> FindNode(Type dataType)
-    {
-        for (var node = _windows.First; node != null; node = node.Next)
-        {
-            if (node.Value.DataType == dataType)
-                return node;
+            var previous = node.Previous;
+            if (previous != null)
+                await previous.Value.Controller.Hide(token);
         }
 
-        return null;
-    }
+        private void BringToFront(IWindowController controller)
+            => controller.ViewTransform.SetAsLastSibling();
 
-    private LinkedListNode<WindowNode> FindLastNode(Type dataType)
-    {
-        for (var node = _windows.Last; node != null; node = node.Previous)
+        private LinkedListNode<WindowNode> FindNode(Type dataType)
         {
-            if (node.Value.DataType == dataType)
-                return node;
+            for (var node = _windows.First; node != null; node = node.Next)
+            {
+                if (node.Value.DataType == dataType)
+                    return node;
+            }
+
+            return null;
         }
 
-        return null;
-    }
+        private LinkedListNode<WindowNode> FindLastNode(Type dataType)
+        {
+            for (var node = _windows.Last; node != null; node = node.Previous)
+            {
+                if (node.Value.DataType == dataType)
+                    return node;
+            }
 
-    public void Dispose()
-    {
-        _serviceCts.Cancel();
-        _serviceCts.Dispose();
+            return null;
+        }
 
-        for (var node = _windows.First; node != null; node = node.Next)
-            node.Value.Controller.Dispose();
+        public void Dispose()
+        {
+            for (var node = _windows.First; node != null; node = node.Next)
+                node.Value.Controller.Dispose();
 
-        _windows.Clear();
+            _windows.Clear();
 
-        _loadingScreen?.Dispose();
-        _loadingScreen = null;
+            _loadingScreen?.Dispose();
+            _loadingScreen = null;
+        }
     }
 }
