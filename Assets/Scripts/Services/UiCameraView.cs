@@ -35,7 +35,7 @@ public sealed class UiCameraService : IInitializable, IDisposable
     private async UniTaskVoid InitCamera(CancellationToken token)
     {
         // Имя ассета == имя вьюшки "UiCameraView"
-        _cameraView = await _commonAssetService.InitializeAsset<UiCameraView>(_uiRoot, token);
+        _cameraView = await _commonAssetService.Instantiate<UiCameraView>(_uiRoot, token);
     }
 
     public void Dispose()

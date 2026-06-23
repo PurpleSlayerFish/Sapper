@@ -7,7 +7,7 @@ public class ReferenceButtonInterceptorView : BaseUiElementView
     public UiButtonView TargetButton;
 }
 
-public class ReferenceButtonInterceptorController : BaseUiElementController<ReferenceButtonInterceptorView>
+public class ReferenceButtonInterceptorUiElementController : BaseUiElementController<ReferenceButtonInterceptorView>
 {
     public override void OnAfterInit()
     {

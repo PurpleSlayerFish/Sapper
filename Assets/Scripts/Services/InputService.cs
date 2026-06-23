@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Model.Signals;
+using UnityEngine;
 using Zenject;
 
 namespace Services
@@ -33,22 +34,5 @@ namespace Services
             _signal.ScreenPosition = Input.mousePosition;
             _signalBus.Fire(_signal);
         }
-    }
-    
-    public enum PointerPhase { Down, Hold, Up }
-
-    public struct OnPointerSignal
-    {
-        public int Button;
-        public PointerPhase Phase;
-        public Vector2 ScreenPosition;
-    }
-
-    public struct OnCellPointerSignal
-    {
-        public int Column;
-        public int Row;
-        public int Button;
-        public PointerPhase Phase;
     }
 }

@@ -15,9 +15,9 @@ public class PauseWindowView : BaseWindowView
 
 public class PauseWindowController : BaseWindowController<PauseWindowView, PauseWindowData>
 {
-    [Inject] private IUiElementControllerFactory _interceptorFactory;
+    [Inject] private IControllerFactory _interceptorFactory;
 
-    private ReferenceButtonInterceptorController _interceptorController;
+    private ReferenceButtonInterceptorUiElementController _interceptorUiElementController;
 
     protected override void OnInitialize()
     {
@@ -31,9 +31,9 @@ public class PauseWindowController : BaseWindowController<PauseWindowView, Pause
 
         if (View.ReferenceButtonInterceptorView != null)
         {
-            _interceptorController = _interceptorFactory.Create<ReferenceButtonInterceptorController>();
-            _interceptorController.Init(View.ReferenceButtonInterceptorView);
-            Disposables.Add(_interceptorController);
+            _interceptorUiElementController = _interceptorFactory.Create<ReferenceButtonInterceptorUiElementController>();
+            _interceptorUiElementController.Init(View.ReferenceButtonInterceptorView);
+            Disposables.Add(_interceptorUiElementController);
         } 
     }
 

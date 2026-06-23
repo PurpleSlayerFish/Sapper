@@ -6,7 +6,7 @@ using Zenject;
 public class WindowsInstaller : MonoInstaller
 {
     [Inject] private WindowsAssetService _assetService;
-    
+
     public override void InstallBindings()
     {
         Container.Bind<WindowControllerFactory>()
@@ -26,10 +26,10 @@ public class WindowsInstaller : MonoInstaller
         Container.BindInstance<Func<TData, IWindowController>>(data =>
         {
             var view = _assetService
-                .InitializeAsset<TView>(Container.Resolve<Transform>(), CancellationToken.None)
+                .Instantiate<TView>(Container.Resolve<Transform>(), CancellationToken.None)
                 .GetAwaiter().GetResult();
 
-            return Container.Instantiate<TController>(new object[] { view, data });
+            return Container.Instantiate<TController>(new object[] {view, data});
         }).WithId(typeof(TData));
     }
 }

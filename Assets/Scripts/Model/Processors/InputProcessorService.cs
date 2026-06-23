@@ -1,4 +1,5 @@
 ﻿using Model.Configs;
+using Model.Signals;
 using Services;
 using UnityEngine;
 using Zenject;

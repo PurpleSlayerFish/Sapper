@@ -13,7 +13,7 @@ public class GameWindowView : BaseWindowView
 
 public class GameWindowController : BaseWindowController<GameWindowView, GameWindowData>
 {
-    [Inject] private IUiElementControllerFactory _timerFactory;
+    [Inject] private IControllerFactory _timerFactory;
     [Inject] private WindowService _windowService;
 
     private TimerController _timerController;

@@ -30,7 +30,7 @@ public class TimerView : BaseUiElementView
     }
 }
 
-public class TimerController : BaseUiElementController<TimerView, TimerData>, ITickable
+public class TimerController : BaseControllerWithViewAndData<TimerView, TimerData>, ITickable
 {
     private TimeSpan _currentTime;
     private bool _isIncreasing;

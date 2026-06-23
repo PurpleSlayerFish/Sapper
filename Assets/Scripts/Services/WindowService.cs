@@ -62,7 +62,7 @@ public sealed class WindowService : IInitializable, IDisposable
 
     private async UniTaskVoid InitLoadingScreen(CancellationToken token)
     {
-        var view = await _windowsAssetService.InitializeAsset<LoadingWindowView>(_windowsRoot, token);
+        var view = await _windowsAssetService.Instantiate<LoadingWindowView>(_windowsRoot, token);
         _loadingScreen = _container.Instantiate<LoadingWindowController>(
             new object[] { view, new LoadingWindowData() });
 
