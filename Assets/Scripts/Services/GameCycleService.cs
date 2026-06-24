@@ -92,33 +92,38 @@ namespace Services
         }
     }
 
-    public sealed class GameCycleService : IInitializable, IDisposable
+    public sealed class GameCycleService : IDisposable
     {
         [Inject] private WindowService _windowService;
-        [Inject(Id = GameStateContainerId.Menu)] private Transform _menuContainer;
-        [Inject(Id = GameStateContainerId.Game)] private Transform _gameContainer;
 
-        private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
+        private Transform _menuContainer;
+        private Transform _gameContainer;
 
         private BaseGameState _currentState;
         private GameState _currentStateType;
         private bool _isTransitioning;
 
-        public void Initialize()
-        {
-            // Деактивируем все контейнеры при старте
-            _menuContainer.gameObject.SetActive(false);
-            _gameContainer.gameObject.SetActive(false);
+        private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
 
-            TransitionTo(GameState.Menu).Forget();
+        public async UniTask InitializeAsync(CancellationToken token)
+        {
+            // Создаём контейнеры кодом — никакого DI, никаких ссылок из инспектора
+            _menuContainer = CreateContainer("MenuContainer");
+            _gameContainer = CreateContainer("GameContainer");
+
+            await TransitionTo(GameState.Menu, token);
         }
 
-        public async UniTask TransitionTo(GameState targetState)
+        private static Transform CreateContainer(string name)
         {
-            if (_isTransitioning)
-                return;
+            var go = new GameObject(name);
+            UnityEngine.Object.DontDestroyOnLoad(go);
+            return go.transform;
+        }
 
-            if (_currentState != null && _currentStateType == targetState)
+        public async UniTask TransitionTo(GameState targetState, CancellationToken token = default)
+        {
+            if (_isTransitioning || (_currentState != null && _currentStateType == targetState))
                 return;
 
             _isTransitioning = true;
@@ -156,14 +161,9 @@ namespace Services
             _lifetimeCts.Dispose();
 
             _currentState?.Dispose();
-            _currentState = null;
-        }
-    }
 
-// Id-константы для инъекции трансформов контейнеров
-    public static class GameStateContainerId
-    {
-        public const string Menu = "MenuContainer";
-        public const string Game = "GameContainer";
+            if (_menuContainer != null) UnityEngine.Object.Destroy(_menuContainer.gameObject);
+            if (_gameContainer != null) UnityEngine.Object.Destroy(_gameContainer.gameObject);
+        }
     }
 }

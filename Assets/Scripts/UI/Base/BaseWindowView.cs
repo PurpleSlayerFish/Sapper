@@ -122,22 +122,20 @@ namespace UI.Base
             Data = data;
 
             View.Initialize();
-            OnInitialize();
         }
-
-        protected BaseWindowController()
+        [Inject]
+        public void PostInject()
         {
-        }
+            if (View.CloseButtonView)
+                Disposables.Add(View.CloseButtonView.Subscribe(HandleCloseRequested));
 
-        protected virtual void OnInitialize()
-        {
-            // Устанавливаем UI-камеру для канваса окна
             if (_uiCameraService?.Camera != null)
                 View.SetCamera(_uiCameraService.Camera);
 
-            if (View.CloseButtonView)
-                Disposables.Add(View.CloseButtonView.Subscribe(HandleCloseRequested));
+            OnInitialize();
         }
+        
+        protected virtual void OnInitialize() { }
 
         private void HandleCloseRequested() => Close(LifetimeCts.Token).Forget();
 

@@ -24,6 +24,9 @@ namespace UI.Windows
 
         private TimerController _timerController;
 
+        [Inject]
+        public GameWindowController(GameWindowView view, GameWindowData data) : base(view, data) { }
+
         protected override void OnInitialize()
         {
             base.OnInitialize();

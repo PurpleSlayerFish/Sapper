@@ -1,5 +1,6 @@
 ﻿using System;
 using Common;
+using Model.Configs;
 using TMPro;
 using UnityEngine;
 using Zenject;

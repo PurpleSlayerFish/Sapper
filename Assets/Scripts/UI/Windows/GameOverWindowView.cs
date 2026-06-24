@@ -29,6 +29,9 @@ namespace UI.Windows
         [Inject] private GameCycleService _gameCycleService;
         private bool _listeningInput;
 
+        [Inject]
+        public GameOverWindowController(GameOverWindowView view, GameOverWindowData data) : base(view, data) { }
+
         protected override void OnInitialize()
         {
             base.OnInitialize();

@@ -18,6 +18,10 @@ namespace UI.Windows
     public class MainMenuWindowController : BaseWindowController<MainMenuWindowView, MainMenuWindowData>
     {
         [Inject] private GameCycleService _gameCycleService;
+        
+        [Inject]
+        public MainMenuWindowController(MainMenuWindowView view, MainMenuWindowData data) : base(view, data) { }
+        
         protected override void OnInitialize()
         {
             base.OnInitialize();

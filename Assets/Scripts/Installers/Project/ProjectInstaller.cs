@@ -1,4 +1,6 @@
 ﻿using Common;
+using Installers.Scene;
+using Model.Processors;
 using Services;
 using Zenject;
 
@@ -8,31 +10,29 @@ namespace Installers.Project
     {
         public override void InstallBindings()
         {
-            // Токен уровня приложения
-            Container.BindInterfacesAndSelfTo<AppLifetimeTokenService>()
+            // AsyncBootstrapper — единственный IInitializable в цепочке
+            Container.BindInterfacesAndSelfTo<AsyncBootstrapper>()
                 .AsSingle()
                 .NonLazy();
 
-            // Сигнал бас
-            SignalBusInstaller.Install(Container);
-            
-            Container.Bind<ResourcesService>().AsSingle();
-            Container.Bind<PrefabsService>().AsSingle();
-            Container.Bind<WindowsAssetService>().AsSingle();
-            Container.Bind<UiAssetService>().AsSingle();
-
-            // Конфиги — грузятся один раз, биндятся по конкретному типу
-            ConfigsInstaller.Install(Container);
-
-            // Фабрика контроллеров — универсальная
-            Container.Bind<IControllerFactory>()
-                .To<DiControllerFactory>()
+            Container.BindInterfacesAndSelfTo<AppLifetimeTokenService>()
                 .AsSingle();
 
-            // Камера
-            Container.BindInterfacesAndSelfTo<UiCameraService>()
-                .AsSingle()
-                .NonLazy();
+            // Фабрика окон
+            Container.Bind<WindowControllerFactory>()
+                .To<WindowControllerFactoryById>()
+                .AsSingle();
+            
+            ConfigsInstaller.Install(Container);
+            Container.Bind<UiCameraService>().AsSingle();
+            Container.Bind<WindowService>().AsSingle();
+            Container.Bind<GameCycleService>().AsSingle();
+
+            SignalBusInstaller.Install(Container);
+            Container.Bind<AssetService>().AsSingle();
+            Container.Bind<IControllerFactory>().To<DiControllerFactory>().AsSingle();
+
+            WindowsInstaller.Install(Container);
         }
     }
 }

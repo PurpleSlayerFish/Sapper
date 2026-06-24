@@ -15,5 +15,9 @@ namespace UI.Windows
     public class LoadingWindowController : BaseWindowController<LoadingWindowView, LoadingWindowData>
     {
         [Inject] private WindowService _windowService;
+        
+        [Inject]
+        public LoadingWindowController(LoadingWindowView view, LoadingWindowData data) : base(view, data) { }
+
     }
 }

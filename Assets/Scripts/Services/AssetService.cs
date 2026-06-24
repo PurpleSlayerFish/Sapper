@@ -127,23 +127,8 @@ namespace Services
         }
     }
 
-    public sealed class UiAssetService : BaseAssetService
+    public sealed class AssetService : BaseAssetService
     {
-        protected override string Section => "UI";
-    }
-
-    public sealed class WindowsAssetService : BaseAssetService
-    {
-        protected override string Section => "Windows";
-    }
-
-    public sealed class PrefabsService : BaseAssetService
-    {
-        protected override string Section => "Prefabs";
-    }
-
-    public sealed class ResourcesService : BaseAssetService
-    {
-        protected override string Section => "Resources";
+        protected override string Section => String.Empty;
     }
 }

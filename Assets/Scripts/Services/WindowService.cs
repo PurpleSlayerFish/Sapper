@@ -47,30 +47,23 @@ namespace Services
         }
     }
 
-    public sealed class WindowService : IInitializable, IDisposable
+    public sealed class WindowService : IDisposable
     {
         [Inject] private WindowControllerFactory _windowFactory;
-        [Inject] private WindowsAssetService _windowsAssetService;
-        [Inject] private DiContainer _container;
+        [Inject] private AssetService _assetService;
         [Inject] private AppLifetimeTokenService _appToken;
-        [Inject(Id = "WindowsRoot")] private Transform _windowsRoot;
+        [Inject] private UiCameraService _uiCameraService;
+        [Inject] private DiContainer _container;
 
-        private readonly LinkedList<WindowNode> _windows = new();
+        private readonly LinkedList<WindowNode> _windows = new LinkedList<WindowNode>();
+        private readonly CancellationTokenSource _serviceCts = new CancellationTokenSource();
 
         private LoadingWindowController _loadingScreen;
 
-        public void Initialize()
+        public async UniTask InitializeAsync(CancellationToken token)
         {
-            InitLoadingScreen(_appToken.Token).Forget();
-        }
-
-        private async UniTaskVoid InitLoadingScreen(CancellationToken token)
-        {
-            var view = await _windowsAssetService.Instantiate<LoadingWindowView>(_windowsRoot, token);
-            _loadingScreen = _container.Instantiate<LoadingWindowController>(
-                new object[] { view, new LoadingWindowData() });
-
-            BringToFront(_loadingScreen);
+            // WindowsRoot уже готов, потому что UiCameraService отработал до нас
+            _loadingScreen = await _windowFactory.Create(new LoadingWindowData(), token) as LoadingWindowController;
         }
 
         public async UniTask Show<TData>(
@@ -122,7 +115,8 @@ namespace Services
             await controller.Show(token);
         }
 
-        private async UniTask<IWindowController> PrepareWindow<TData>(TData data, bool isMultiple, CancellationToken token)
+        private async UniTask<IWindowController> PrepareWindow<TData>(TData data, bool isMultiple,
+            CancellationToken token)
             where TData : WindowData
         {
             if (!isMultiple)

@@ -18,7 +18,7 @@ MonoBehaviour:
   m_GUID: 80b129dad8ec6794d9e0f8fee52ba252
   m_SerializeEntries:
   - m_GUID: 32ac3cc3dd0c7f6488714982a302cf08
-    m_Address: Assets/Configs/GameFieldSettings.asset
+    m_Address: GameFieldSettings
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -15,8 +15,7 @@ namespace Controller
     public sealed class GameFieldController : IInitializable, IDisposable
     {
         [Inject] private IControllerFactory _controllerFactory;
-        [Inject] private ResourcesService _resourcesService;
-        [Inject] private PrefabsService _prefabsService;
+        [Inject] private AssetService _assetService;
         [Inject] private GameFieldSettings _settings;
         [Inject] private SignalBus _signalBus;
         [Inject] private SessionLifetimeTokenService _sessionToken;
@@ -48,7 +47,7 @@ namespace Controller
                         _settings.OriginWorld.y + row * _settings.CellSize,
                         0f);
 
-                    var cellView = await _prefabsService.Instantiate<CellView>(_gameContainer, token);
+                    var cellView = await _assetService.Instantiate<CellView>(_gameContainer, token);
                     cellView.Setup(col, row, worldPos);
 
                     var controller = _controllerFactory.Create<CellController>();
@@ -65,15 +64,15 @@ namespace Controller
         {
             _cellSprites = new CellSprites
             {
-                Hidden = await _resourcesService.Load<Sprite>(_settings.SpriteHidden, token),
-                Flagged = await _resourcesService.Load<Sprite>(_settings.SpriteFlagged, token),
-                Mine = await _resourcesService.Load<Sprite>(_settings.SpriteMine, token),
-                Revealed = await _resourcesService.Load<Sprite>(_settings.SpriteRevealed, token),
+                Hidden = await _assetService.Load<Sprite>(_settings.SpriteHidden, token),
+                Flagged = await _assetService.Load<Sprite>(_settings.SpriteFlagged, token),
+                Mine = await _assetService.Load<Sprite>(_settings.SpriteMine, token),
+                Revealed = await _assetService.Load<Sprite>(_settings.SpriteRevealed, token),
                 Numbers = new Sprite[8]
             };
 
             for (var i = 0; i < 8; i++)
-                _cellSprites.Numbers[i] = await _resourcesService.Load<Sprite>(_settings.SpriteNumbers[i], token);
+                _cellSprites.Numbers[i] = await _assetService.Load<Sprite>(_settings.SpriteNumbers[i], token);
         }
 
         private void HandleCellStateChanged(OnCellStateChangedSignal signal)
@@ -90,7 +89,7 @@ namespace Controller
                 foreach (var c in _cellControllers)
                     c?.Dispose();
 
-            _resourcesService.Dispose();
+            _assetService.Dispose();
         }
     }
 }

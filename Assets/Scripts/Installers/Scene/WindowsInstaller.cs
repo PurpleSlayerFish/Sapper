@@ -13,17 +13,6 @@ namespace Installers.Scene
     {
         public override void InstallBindings()
         {
-            // Фабрика окон
-            Container.Bind<WindowControllerFactory>()
-                .To<WindowControllerFactoryById>()
-                .AsSingle();
-
-            // Сервис окон
-            Container.BindInterfacesAndSelfTo<WindowService>()
-                .AsSingle()
-                .NonLazy();
-
-            // Биндим делегаты создания окон по Id = typeof(TData)
             BindWindow<MainMenuWindowController, MainMenuWindowView, MainMenuWindowData>();
             BindWindow<GameWindowController, GameWindowView, GameWindowData>();
             BindWindow<PauseWindowController, PauseWindowView, PauseWindowData>();
@@ -41,9 +30,9 @@ namespace Installers.Scene
                 .WithId(typeof(TData))
                 .FromInstance(async (data, token) =>
                 {
-                    var assetService = Container.Resolve<WindowsAssetService>();
-                    var root = Container.ResolveId<Transform>("WindowsRoot");
-                    var view = await assetService.Instantiate<TView>(root, token);
+                    var assetService = Container.Resolve<AssetService>();
+                    var uiCamera = Container.Resolve<UiCameraService>();
+                    var view = await assetService.Instantiate<TView>(uiCamera.UiRoot, token);
                     var controller = Container.Instantiate<TController>(new object[] {view, data});
                     return (IWindowController) controller;
                 });

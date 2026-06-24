@@ -10,15 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Common
+  m_Name: Prefabs
   m_EditorClassIdentifier: 
-  m_GroupName: Common
+  m_GroupName: Prefabs
   m_Data:
     m_SerializedData: []
   m_GUID: 98b101c8eff69c14a982ead9d640e0f5
   m_SerializeEntries:
   - m_GUID: 48667d4fe73d28a44840eea1d804cb71
-    m_Address: Common/UiCameraView
+    m_Address: UiCameraView
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 556c3a5cd3e7677409e23e7c9bac3c24
+    m_Address: CellView
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

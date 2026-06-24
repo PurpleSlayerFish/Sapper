@@ -16,12 +16,7 @@ MonoBehaviour:
   m_Data:
     m_SerializedData: []
   m_GUID: b07303f442f6d7f47a3c39e7c09813db
-  m_SerializeEntries:
-  - m_GUID: 556c3a5cd3e7677409e23e7c9bac3c24
-    m_Address: Prefabs/CellView.prefab
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 571ab7e6023e0cb4684b18b643fc13b7, type: 2}
   m_SchemaSet:

@@ -1,28 +1,33 @@
 ﻿using Installers.Scene;
+using Model.Configs;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Zenject;
 
 namespace Installers.Project
 {
-    public sealed class ConfigsInstaller : Installer<GameCycleInstaller>
+    public sealed class ConfigsInstaller : Installer<ConfigsInstaller>
     {
-        private const string ConfigsLabel = "Configs";
+        private static readonly string[] ConfigAddresses =
+        {
+            nameof(GameFieldSettings),
+            // сюда добавляем новые конфиги по мере появления
+        };
 
         public override void InstallBindings()
         {
-            var handle = Addressables.LoadAssetsAsync<ScriptableObject>(ConfigsLabel, null);
-            var configs = handle.WaitForCompletion();
-
-            foreach (var config in configs)
+            foreach (var address in ConfigAddresses)
+            {
+                var handle = Addressables.LoadAssetAsync<ScriptableObject>(address);
+                var config = handle.WaitForCompletion();
                 BindConfig(config);
+            }
         }
 
         private void BindConfig(ScriptableObject config)
         {
-            var concreteType = config.GetType();
             Container
-                .Bind(concreteType)
+                .Bind(config.GetType())
                 .FromInstance(config)
                 .AsSingle()
                 .NonLazy();

@@ -23,7 +23,10 @@ namespace UI.Windows
         [Inject] private IControllerFactory _interceptorFactory;
         [Inject] private GameCycleService _gameCycleService;
         private ReferenceButtonInterceptorController _interceptorController;
-
+        
+        [Inject]
+        public PauseWindowController(PauseWindowView view, PauseWindowData data) : base(view, data) { }
+        
         protected override void OnInitialize()
         {
             base.OnInitialize();
