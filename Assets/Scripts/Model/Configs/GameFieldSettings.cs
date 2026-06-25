@@ -20,6 +20,7 @@ namespace Model.Configs
         public AssetReferenceSprite SpriteHidden;
         public AssetReferenceSprite SpriteFlagged;
         public AssetReferenceSprite SpriteMine;
+        public AssetReferenceSprite SpriteCurrentMine;
         public AssetReferenceSprite SpriteRevealed;
         public AssetReferenceSprite[] SpriteNumbers = new AssetReferenceSprite[8];
     }

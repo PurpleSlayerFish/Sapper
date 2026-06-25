@@ -22,6 +22,7 @@ namespace UI.Windows
     {
         [Inject] private IControllerFactory _timerFactory;
         [Inject] private WindowService _windowService;
+        [Inject] private InputService _inputService;
 
         private TimerController _timerController;
 
@@ -41,6 +42,8 @@ namespace UI.Windows
 
         private void HandleMenuButtonClicked()
         {
+            // todo made pauseService
+            _inputService.IsActive = false;
             _windowService.Show(new PauseWindowData(), token: LifetimeCts.Token).Forget();
         }
 

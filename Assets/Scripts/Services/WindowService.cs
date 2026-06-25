@@ -66,8 +66,8 @@ namespace Services
 
         public async UniTask Show<TData>(
             TData data,
-            bool isMultiple = false,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            bool isMultiple = false)
             where TData : WindowData
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);
@@ -77,9 +77,9 @@ namespace Services
         // На префабе LoadingWindowView Canvas.sortingOrder = 999
         public async UniTask ShowWithLoadingScreen<TData>(
             TData data,
-            bool isMultiple = false,
+            CancellationToken token = default,
             Func<UniTask> loadingTask = null,
-            CancellationToken token = default)
+            bool isMultiple = false)
             where TData : WindowData
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);

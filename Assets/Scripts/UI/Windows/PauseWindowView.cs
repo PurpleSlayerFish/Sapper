@@ -22,6 +22,7 @@ namespace UI.Windows
     {
         [Inject] private IControllerFactory _interceptorFactory;
         [Inject] private GameCycleService _gameCycleService;
+        [Inject] private InputService _inputService;
         private ReferenceButtonInterceptorController _interceptorController;
         
         [Inject]
@@ -42,11 +43,18 @@ namespace UI.Windows
                 _interceptorController = _interceptorFactory.Create<ReferenceButtonInterceptorController>();
                 _interceptorController.Init(View.ReferenceButtonInterceptorView);
                 Disposables.Add(_interceptorController);
-            } 
+            }
         }
 
         private void HandleRestartClicked() => _gameCycleService.TransitionTo(GameState.Game).Forget();
     
         private void HandleMainMenuClicked() => _gameCycleService.TransitionTo(GameState.Menu).Forget();
+
+        protected override void OnDispose()
+        {
+            base.OnDispose();
+            // todo made pauseService
+            _inputService.IsActive = true;
+        }
     }
 }

@@ -27,6 +27,7 @@ namespace UI.Windows
     public class GameOverWindowController : BaseWindowController<GameOverWindowView, GameOverWindowData>, ITickable
     {
         [Inject] private GameCycleService _gameCycleService;
+        [Inject] private InputService _inputService;
         private bool _listeningInput;
 
         [Inject]
@@ -44,9 +45,11 @@ namespace UI.Windows
 
             if (View.MainMenuButton != null)
                 Disposables.Add(View.MainMenuButton.Subscribe(HandleMainMenuClicked));
+            
+            _inputService.IsActive = false;
         }
-
-
+        
+        // Пока оставим здесь
         protected override void OnAfterShow()
         {
             _listeningInput = true;

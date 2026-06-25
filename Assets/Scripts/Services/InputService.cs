@@ -10,12 +10,12 @@ namespace Services
     public sealed class InputService : IInitializable
     {
         [Inject] private SignalBus _signalBus;
-
         private static readonly int[] Buttons = { 0, 1 };
         private OnPointerSignal _signal;
-
         private CancellationTokenSource _cts;
 
+        public bool IsActive { get; set; }
+        
         public void Initialize()
         {
             _cts = new CancellationTokenSource();
@@ -27,7 +27,8 @@ namespace Services
             while (!token.IsCancellationRequested)
             {
                 await UniTask.Yield(PlayerLoopTiming.Update, token);
-
+                if (!IsActive)
+                    continue;
                 foreach (var button in Buttons)
                 {
                     if (Input.GetMouseButtonDown(button))

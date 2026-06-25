@@ -11,6 +11,7 @@ namespace Model.Signals
         public CellState State;
         public int AdjacentMines;
         public bool IsMine;
+        public bool IsCurrent;
     }
 
     public struct OnGameOverSignal

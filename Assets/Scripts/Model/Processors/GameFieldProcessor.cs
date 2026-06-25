@@ -57,8 +57,8 @@ namespace Model.Processors
 
             if (cell.IsMine)
             {
-                RevealCell(col, row);
-                FireGameOver(isWin: false);
+                RevealCell(col, row, true);
+                FireGameOver(false);
                 return;
             }
 
@@ -66,7 +66,7 @@ namespace Model.Processors
             FloodReveal(col, row);
 
             if (_revealedCount >= _totalSafeCells)
-                FireGameOver(isWin: true);
+                FireGameOver(true);
         }
 
         private void HandleFlag(int col, int row)
@@ -80,7 +80,7 @@ namespace Model.Processors
                 ? CellState.Hidden
                 : CellState.Flagged;
 
-            FireCellChanged(col, row, ref cell);
+            FireCellChanged(col, row, ref cell, false);
         }
 
         private readonly Stack<(int col, int row)> _floodStack = new(64);
@@ -99,7 +99,7 @@ namespace Model.Processors
                 if (cell.State == CellState.Revealed || cell.State == CellState.Flagged)
                     continue;
 
-                RevealCell(col, row);
+                RevealCell(col, row, false);
 
                 // Если клетка пустая — раскрываем соседей
                 if (cell.AdjacentMines == 0)
@@ -124,7 +124,7 @@ namespace Model.Processors
             }
         }
 
-        private void RevealCell(int col, int row)
+        private void RevealCell(int col, int row, bool isCurrent)
         {
             ref var cell = ref _model.GetCell(col, row);
             cell.State = CellState.Revealed;
@@ -132,7 +132,7 @@ namespace Model.Processors
             if (!cell.IsMine)
                 _revealedCount++;
 
-            FireCellChanged(col, row, ref cell);
+            FireCellChanged(col, row, ref cell, isCurrent);
         }
 
         // Размещаем мины случайно, исключая стартовую клетку и её соседей
@@ -191,7 +191,7 @@ namespace Model.Processors
             }
         }
 
-        private void FireCellChanged(int col, int row, ref Cell cell)
+        private void FireCellChanged(int col, int row, ref Cell cell, bool isCurrent)
         {
             _signalBus.Fire(new OnCellStateChangedSignal
             {
@@ -199,7 +199,8 @@ namespace Model.Processors
                 Row = row,
                 State = cell.State,
                 AdjacentMines = cell.AdjacentMines,
-                IsMine = cell.IsMine
+                IsMine = cell.IsMine,
+                IsCurrent = isCurrent
             });
         }
 
@@ -220,7 +221,7 @@ namespace Model.Processors
                 ref var cell = ref _model.GetCell(col, row);
 
                 if (cell.IsMine && cell.State != CellState.Revealed)
-                    RevealCell(col, row);
+                    RevealCell(col, row, false);
             }
         }
 

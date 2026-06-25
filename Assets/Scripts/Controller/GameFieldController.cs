@@ -62,6 +62,7 @@ namespace Controller
                 Hidden = await _assetService.Load<Sprite>(_settings.SpriteHidden, token),
                 Flagged = await _assetService.Load<Sprite>(_settings.SpriteFlagged, token),
                 Mine = await _assetService.Load<Sprite>(_settings.SpriteMine, token),
+                CurrentMine = await _assetService.Load<Sprite>(_settings.SpriteCurrentMine, token),
                 Revealed = await _assetService.Load<Sprite>(_settings.SpriteRevealed, token),
                 Numbers = new Sprite[8]
             };
@@ -73,7 +74,7 @@ namespace Controller
         private void HandleCellStateChanged(OnCellStateChangedSignal signal)
         {
             _cellControllers[signal.Col * _settings.Rows + signal.Row]
-                .ApplyState(signal.State, signal.AdjacentMines, signal.IsMine);
+                .ApplyState(signal.State, signal.AdjacentMines, signal.IsMine, signal.IsCurrent);
         }
 
         public void Dispose()

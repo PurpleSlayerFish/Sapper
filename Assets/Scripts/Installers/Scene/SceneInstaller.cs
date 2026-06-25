@@ -9,8 +9,9 @@ namespace Installers.Scene
         public override void InstallBindings()
         {
             // Todo когда переделаем на сцены - вернуть нормальный биндинг
-            // InputInstaller.Install(Container);
             // GameFieldInstaller.Install(Container);
+            // Container.BindInterfacesAndSelfTo<GameInputProcessorService>()
+            //     .AsSingle();
         }
     }
 }

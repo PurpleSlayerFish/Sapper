@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using Model.Configs;
 using Model.Entities;
 using Model.Processors;
+using Model.Signals;
 using UI.Windows;
 using UnityEngine;
 using Zenject;
@@ -70,8 +71,11 @@ namespace Services
         private GameFieldProcessor _gameFieldProcessor;
         private GameFieldSettings _settings;
         private GameFieldModel _gameModel;
-        private InputService _inputService;
         private GameInputProcessorService _gameInputProcessorService;
+        private SignalBus _signalBus;
+        private const string ContainerId = "[GameContainer]";
+        private const string WinMessage = "You win";
+        private const string LoseMessage = "You lose";
 
         public GameplayGameState(
             Transform container,
@@ -83,33 +87,40 @@ namespace Services
             _container = diContainer;
         }
 
-        private const string ContainerId = "[GameContainer]";
 
         public override async UniTask Enter()
+        {
+            
+            await WindowService.ShowWithLoadingScreen(new GameWindowData(), LifetimeToken, AsyncLoad);
+        }
+
+        private async UniTask AsyncLoad()
         {
             // биндим трансформ контейнер
             Container.gameObject.SetActive(true);
             _container.Bind<Transform>().WithId(ContainerId).FromInstance(Container).AsCached();
             
-            await WindowService.ShowWithLoadingScreen(new GameWindowData(), false, AsyncLoad, LifetimeToken);
-        }
-
-        private async UniTask AsyncLoad()
-        {
             _settings = _container.Resolve<GameFieldSettings>();
+            _signalBus = _container.Resolve<SignalBus>();
             _gameModel = new GameFieldModel(_settings.Columns, _settings.Rows);
             _container.Bind<GameFieldModel>().FromInstance(_gameModel).AsCached();
             
             _gameFieldController = _container.Instantiate<GameFieldController>();
             _gameFieldProcessor = _container.Instantiate<GameFieldProcessor>();
-            _inputService = _container.Instantiate<InputService>();
             _gameInputProcessorService = _container.Instantiate<GameInputProcessorService>();
-
+            
+            _signalBus.Subscribe<OnGameOverSignal>(OnGameOver);
+            
             // Инициализируем вручную в нужном порядке
             await _gameFieldController.InitAsync(LifetimeToken);
             _gameFieldProcessor.Initialize();
-            _inputService.Initialize();
             _gameInputProcessorService.Initialize();
+        }
+
+        private async void OnGameOver(OnGameOverSignal signal)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(2));
+            await WindowService.Show(new GameOverWindowData(signal.IsWin ? WinMessage: LoseMessage), LifetimeToken);
         }
 
         public override async UniTask Exit()
@@ -118,13 +129,13 @@ namespace Services
             await WindowService.Close<PauseWindowData>(LifetimeToken);
 
             _gameInputProcessorService.Dispose();
-            _inputService.Dispose();
             _gameFieldProcessor.Dispose();
             _gameFieldController.Dispose();
             
             _container.UnbindId<Transform>(ContainerId);
             _container.Unbind<GameFieldModel>();
             _gameModel = null;
+            _signalBus.TryUnsubscribe<OnGameOverSignal>(OnGameOver);
 
             Container.gameObject.SetActive(false);
         }
