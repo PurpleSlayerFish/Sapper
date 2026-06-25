@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 136b04b6ff3a4051b246bab9e4d56a0e, type: 3}
   m_Name: GameFieldSettings
   m_EditorClassIdentifier: 
-  OriginWorld: {x: 0, y: 0}
-  CellSize: 1
-  Columns: 9
-  Rows: 9
-  MineCount: 10
+  _originWorld: {x: 0, y: 0}
+  _mineCount: 5
+  Columns: 5
+  Rows: 5
+  CellSize: 0.8
   SpriteHidden:
     m_AssetGUID: fe0558dbffcdabe4f9ffe01ba116c1f3
     m_SubObjectName: Hidden

@@ -11,7 +11,7 @@ namespace Installers.Scene
             Container.BindInterfacesAndSelfTo<InputService>()
                 .AsSingle();
 
-            Container.BindInterfacesAndSelfTo<InputProcessorService>()
+            Container.BindInterfacesAndSelfTo<GameInputProcessorService>()
                 .AsSingle();
         }
     }

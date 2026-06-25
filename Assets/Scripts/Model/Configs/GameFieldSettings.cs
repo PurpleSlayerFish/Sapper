@@ -6,26 +6,21 @@ namespace Model.Configs
     [CreateAssetMenu(fileName = "GameFieldSettings", menuName = "Configs/GameFieldSettings")]
     public sealed class GameFieldSettings : ScriptableObject
     {
-        public Vector2 OriginWorld;
+        [SerializeField] private Vector2 _originWorld;
+        [Min(1), Tooltip("Not more, then half of a field"), SerializeField] private int _mineCount = 10;
+        [Range(2, 50)] public int Columns = 9;
+        [Range(2, 50)] public int Rows = 9;
         public float CellSize = 1f;
 
-        [Range(2,50)] public int Columns = 9;
-        [Range(2,50)] public int Rows    = 9;
-        [Min(1)] public int MineCount = 10;
-
-        public int MaxMineCount => (Columns * Rows) / 2;
+        public int MineCount => Mathf.Min(_mineCount, (Columns * Rows) / 2);
+        public float ColumnOffset => ((float) Columns) / 2 * CellSize;
+        public float RowOffset => ((float) Rows) / 2 * CellSize;
+        public Vector2 FieldStartPosition => new(_originWorld.x - ColumnOffset, _originWorld.y - RowOffset);
 
         public AssetReferenceSprite SpriteHidden;
         public AssetReferenceSprite SpriteFlagged;
         public AssetReferenceSprite SpriteMine;
         public AssetReferenceSprite SpriteRevealed;
         public AssetReferenceSprite[] SpriteNumbers = new AssetReferenceSprite[8];
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            MineCount = Mathf.Clamp(MineCount, 1, MaxMineCount);
-        }
-#endif
     }
 }

@@ -63,6 +63,7 @@ namespace Common
         public virtual void Refresh() => OnRefresh();
         protected virtual void OnRefresh(){}
         public virtual void OnAfterInit(){}
+        public virtual void OnDispose(){}
 
 
         public void SetActive(bool value)
@@ -81,7 +82,8 @@ namespace Common
             foreach (var disposable in Disposables) 
                 disposable.Dispose();
             Disposables.Clear();
-        
+
+            OnDispose();
             View.Dispose();
         }
     }

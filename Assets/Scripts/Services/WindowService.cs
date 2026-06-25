@@ -4,7 +4,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UI.Base;
 using UI.Windows;
-using UnityEngine;
 using Zenject;
 
 namespace Services
@@ -56,7 +55,6 @@ namespace Services
         [Inject] private DiContainer _container;
 
         private readonly LinkedList<WindowNode> _windows = new LinkedList<WindowNode>();
-        private readonly CancellationTokenSource _serviceCts = new CancellationTokenSource();
 
         private LoadingWindowController _loadingScreen;
 
@@ -69,48 +67,36 @@ namespace Services
         public async UniTask Show<TData>(
             TData data,
             bool isMultiple = false,
-            bool needLoadingScreen = false,
-            Action onLoadingComplete = null,
             CancellationToken token = default)
             where TData : WindowData
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);
-
-            if (needLoadingScreen)
-                await ShowWithLoadingScreen(data, isMultiple, onLoadingComplete, linkedCts.Token);
-            else
-                await ShowInternal(data, isMultiple, onLoadingComplete, linkedCts.Token);
+            await ShowInternal(data, isMultiple, linkedCts.Token);
         }
 
-        private async UniTask ShowWithLoadingScreen<TData>(
+        // На префабе LoadingWindowView Canvas.sortingOrder = 999
+        public async UniTask ShowWithLoadingScreen<TData>(
             TData data,
-            bool isMultiple,
-            Action onLoadingComplete,
-            CancellationToken token)
+            bool isMultiple = false,
+            Func<UniTask> loadingTask = null,
+            CancellationToken token = default)
             where TData : WindowData
         {
-            BringToFront(_loadingScreen);
-            await _loadingScreen.Show(token);
-
-            var controller = await PrepareWindow(data, isMultiple, token);
-            onLoadingComplete?.Invoke();
-
-            BringToFront(controller);
-            await controller.Show(token);
-
-            await _loadingScreen.Hide(token);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _appToken.Token);
+            await _loadingScreen.Show(linkedCts.Token);
+            if (loadingTask != null)
+                await loadingTask.Invoke();
+            await ShowInternal(data, isMultiple, linkedCts.Token);
+            await _loadingScreen.Hide(linkedCts.Token);
         }
 
         private async UniTask ShowInternal<TData>(
             TData data,
             bool isMultiple,
-            Action onLoadingComplete,
             CancellationToken token)
             where TData : WindowData
         {
             var controller = await PrepareWindow(data, isMultiple, token);
-            onLoadingComplete?.Invoke();
-
             BringToFront(controller);
             await controller.Show(token);
         }

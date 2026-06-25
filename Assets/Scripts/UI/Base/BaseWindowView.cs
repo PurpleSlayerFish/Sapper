@@ -104,6 +104,7 @@ namespace UI.Base
         where TData : WindowData
     {
         [Inject] private UiCameraService _uiCameraService;
+        [Inject] private WindowService _windowService;
 
         protected readonly TView View;
         protected readonly TData Data;
@@ -137,7 +138,7 @@ namespace UI.Base
         
         protected virtual void OnInitialize() { }
 
-        private void HandleCloseRequested() => Close(LifetimeCts.Token).Forget();
+        private void HandleCloseRequested() => _windowService.Close<TData>().Forget();
 
         public async UniTask Show(CancellationToken token)
         {

@@ -83,8 +83,7 @@ namespace Model.Processors
             FireCellChanged(col, row, ref cell);
         }
 
-        // Стек переиспользуем — аллоцируем один раз
-        private readonly Stack<(int col, int row)> _floodStack = new Stack<(int, int)>(64);
+        private readonly Stack<(int col, int row)> _floodStack = new(64);
 
         private void FloodReveal(int startCol, int startRow)
         {

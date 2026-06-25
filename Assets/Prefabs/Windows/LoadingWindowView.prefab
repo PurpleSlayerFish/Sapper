@@ -197,7 +197,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 999
   m_TargetDisplay: 0
 --- !u!114 &5166560010549967817
 MonoBehaviour:
@@ -267,8 +267,8 @@ MonoBehaviour:
   _canvasGroup: {fileID: 124975691366407031}
   _canvas: {fileID: 5855730714833530018}
   _graphicRaycaster: {fileID: 8646572020453630737}
-  _showDuration: 0.25
-  _hideDuration: 0.2
+  _showDuration: 0
+  _hideDuration: 0
 --- !u!1001 &7329010440676196651
 PrefabInstance:
   m_ObjectHideFlags: 0

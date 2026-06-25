@@ -1,29 +1,42 @@
-﻿using Model.Signals;
+﻿using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Model.Signals;
 using UnityEngine;
 using Zenject;
 
 namespace Services
 {
-    public sealed class InputService : ITickable
+    public sealed class InputService : IInitializable
     {
         [Inject] private SignalBus _signalBus;
 
-        // Кэшируем сигнал — не аллоцируем каждый тик
+        private static readonly int[] Buttons = { 0, 1 };
         private OnPointerSignal _signal;
 
-        // Два кнопки: 0 = left, 1 = right
-        private static readonly int[] Buttons = { 0, 1 };
+        private CancellationTokenSource _cts;
 
-        public void Tick()
+        public void Initialize()
         {
-            foreach (var button in Buttons)
+            _cts = new CancellationTokenSource();
+            TickAsync(_cts.Token).Forget();
+        }
+
+        private async UniTaskVoid TickAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
             {
-                if (Input.GetMouseButtonDown(button))
-                    Fire(button, PointerPhase.Down);
-                else if (Input.GetMouseButton(button))
-                    Fire(button, PointerPhase.Hold);
-                else if (Input.GetMouseButtonUp(button))
-                    Fire(button, PointerPhase.Up);
+                await UniTask.Yield(PlayerLoopTiming.Update, token);
+
+                foreach (var button in Buttons)
+                {
+                    if (Input.GetMouseButtonDown(button))
+                        Fire(button, PointerPhase.Down);
+                    else if (Input.GetMouseButton(button))
+                        Fire(button, PointerPhase.Hold);
+                    else if (Input.GetMouseButtonUp(button))
+                        Fire(button, PointerPhase.Up);
+                }
             }
         }
 
@@ -33,6 +46,13 @@ namespace Services
             _signal.Phase = phase;
             _signal.ScreenPosition = Input.mousePosition;
             _signalBus.Fire(_signal);
+        }
+        
+        public void Dispose()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
         }
     }
 }

@@ -285,7 +285,7 @@ MonoBehaviour:
   _canvas: {fileID: 5855730714833530018}
   _graphicRaycaster: {fileID: 8646572020453630737}
   _showDuration: 0.25
-  _hideDuration: 0.2
+  _hideDuration: 0
   TimerView: {fileID: 5367133403427723477}
   MenuButtonView: {fileID: 699103203793381147}
 --- !u!1001 &5243501810341857479

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading;
 using Common;
+using Cysharp.Threading.Tasks;
 using Model.Configs;
 using TMPro;
 using UnityEngine;
@@ -34,61 +36,63 @@ namespace UI.Elements
         }
     }
 
-    public class TimerController : BaseControllerWithViewAndData<TimerView, TimerData>, ITickable
+    public sealed class TimerController : BaseControllerWithViewAndData<TimerView, TimerData>
     {
-        private TimeSpan _currentTime;
-        private bool _isIncreasing;
+        private CancellationTokenSource _cts;
         private bool _isRunning;
-        private double _accumulatedSeconds;
+        private TimeSpan _currentTime;
         private double _sinceLastRedraw;
 
         public override void OnAfterInit()
         {
             _currentTime = Data.InitialTime;
-            _isIncreasing = Data.IsIncreasing;
-            _isRunning = false;
-            _accumulatedSeconds = 0d;
-            _sinceLastRedraw = 0d;
-
+            _cts = new CancellationTokenSource();
             View.SetTime(_currentTime);
+            RunAsync(_cts.Token).Forget();
+        }
+
+        private async UniTaskVoid RunAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update, token);
+
+                if (!_isRunning)
+                    continue;
+
+                _sinceLastRedraw += Time.deltaTime;
+
+                if (_sinceLastRedraw < View.UpdateThreshold)
+                    continue;
+
+                _currentTime = Data.IsIncreasing
+                    ? _currentTime + TimeSpan.FromTicks((long)(_sinceLastRedraw * TimeSpan.TicksPerSecond))
+                    : _currentTime - TimeSpan.FromTicks((long)(_sinceLastRedraw * TimeSpan.TicksPerSecond));
+
+                if (!Data.IsIncreasing && _currentTime < TimeSpan.Zero)
+                    _currentTime = TimeSpan.Zero;
+
+                _sinceLastRedraw = 0d;
+                View.SetTime(_currentTime);
+            }
         }
 
         public void Start() => _isRunning = true;
-
-        public void Pause() => _isRunning = false;
+        public void Pause()      => _isRunning = false;
 
         public void Reset()
         {
-            _isRunning = false;
-            _accumulatedSeconds = 0d;
+            _isRunning       = false;
             _sinceLastRedraw = 0d;
+            _currentTime     = Data.InitialTime;
             View.SetTime(_currentTime);
         }
 
-        public void Tick()
+        public override void OnDispose()
         {
-            if (!_isRunning)
-                return;
-
-            var delta = Time.deltaTime;
-            _accumulatedSeconds += delta;
-            _sinceLastRedraw += delta;
-
-            if (_sinceLastRedraw < View.UpdateThreshold)
-                return;
-
-            var elapsed = TimeSpan.FromSeconds(_accumulatedSeconds);
-            _currentTime = _isIncreasing
-                ? _currentTime + elapsed
-                : _currentTime - elapsed;
-
-            if (!_isIncreasing && _currentTime < TimeSpan.Zero)
-                _currentTime = TimeSpan.Zero;
-
-            _accumulatedSeconds = 0d;
-            _sinceLastRedraw = 0d;
-
-            View.SetTime(_currentTime);
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
         }
     }
 }

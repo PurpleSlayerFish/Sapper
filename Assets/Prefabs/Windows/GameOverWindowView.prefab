@@ -270,7 +270,7 @@ MonoBehaviour:
   _canvas: {fileID: 5855730714833530018}
   _graphicRaycaster: {fileID: 8646572020453630737}
   _showDuration: 0.25
-  _hideDuration: 0.2
+  _hideDuration: 0
   MessageText: {fileID: 8722726633352106289}
   RestartButton: {fileID: 699103203793381147}
   MainMenuButton: {fileID: 2418554055215170480}

@@ -1,4 +1,5 @@
-﻿using Common;
+﻿using System;
+using Common;
 using Cysharp.Threading.Tasks;
 using Services;
 using UI.Base;
@@ -32,7 +33,7 @@ namespace UI.Windows
             base.OnInitialize();
 
             _timerController = _timerFactory.Create<TimerController>();
-            _timerController.Init(View.TimerView, new TimerData());
+            _timerController.Init(View.TimerView, new TimerData(TimeSpan.Zero, 1));
 
             if (View.MenuButtonView != null)
                 Disposables.Add(View.MenuButtonView.Subscribe(HandleMenuButtonClicked));

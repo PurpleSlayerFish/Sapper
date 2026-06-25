@@ -8,16 +8,9 @@ namespace Installers.Scene
     {
         public override void InstallBindings()
         {
-            SignalsInstaller.Install(Container);
-
-            // Токен уровня сессии
-            Container.BindInterfacesAndSelfTo<SessionLifetimeTokenService>()
-                .AsSingle()
-                .NonLazy();
-
-            // Инсталлеры подсистем
-            WindowsInstaller.Install(Container);
-            InputInstaller.Install(Container);
+            // Todo когда переделаем на сцены - вернуть нормальный биндинг
+            // InputInstaller.Install(Container);
+            // GameFieldInstaller.Install(Container);
         }
     }
 }

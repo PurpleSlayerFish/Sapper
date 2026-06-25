@@ -136,7 +136,7 @@ MonoBehaviour:
   _canvas: {fileID: 5855730714833530018}
   _graphicRaycaster: {fileID: 8646572020453630737}
   _showDuration: 0.25
-  _hideDuration: 0.2
+  _hideDuration: 0
   RestartButtonView: {fileID: 699103203793381147}
   MainMenuButtonView: {fileID: 2418554055215170480}
   ReferenceButtonInterceptorView: {fileID: 8767259198813374415}
@@ -232,6 +232,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9104123616311206648, guid: 3bac1fc23c810ac4585010db08273ba9, type: 3}
+      propertyPath: TargetButton
+      value: 
+      objectReference: {fileID: 2694316784541480220}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

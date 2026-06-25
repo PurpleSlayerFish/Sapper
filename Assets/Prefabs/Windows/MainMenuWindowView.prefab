@@ -123,7 +123,7 @@ MonoBehaviour:
   _canvas: {fileID: 5855730714833530018}
   _graphicRaycaster: {fileID: 8646572020453630737}
   _showDuration: 0.25
-  _hideDuration: 0.2
+  _hideDuration: 0
   StartButton: {fileID: 699103203793381147}
   ExitButton: {fileID: 2418554055215170480}
 --- !u!225 &124975691366407031

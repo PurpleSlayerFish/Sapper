@@ -12,26 +12,21 @@ using Zenject;
 
 namespace Controller
 {
-    public sealed class GameFieldController : IInitializable, IDisposable
+    public sealed class GameFieldController : IDisposable
     {
         [Inject] private IControllerFactory _controllerFactory;
         [Inject] private AssetService _assetService;
         [Inject] private GameFieldSettings _settings;
         [Inject] private SignalBus _signalBus;
-        [Inject] private SessionLifetimeTokenService _sessionToken;
-        [Inject(Id = "GameContainer")] private Transform _gameContainer;
+        [Inject] private DiContainer _diContainer;
+        [Inject(Id = "[GameContainer]")] private Transform _gameContainer;
 
-        private GameFieldModel _model;
         private CellController[] _cellControllers;
         private CellSprites _cellSprites;
+        private CancellationTokenSource _cts = new();
 
-
-        public void Initialize() => InitAsync(_sessionToken.Token).Forget();
-
-        private async UniTaskVoid InitAsync(CancellationToken token)
+        public async UniTask InitAsync(CancellationToken token)
         {
-            _model = new GameFieldModel(_settings.Columns, _settings.Rows);
-
             await LoadSprites(token);
 
             _cellControllers = new CellController[_settings.Columns * _settings.Rows];
@@ -43,8 +38,8 @@ namespace Controller
                 for (var row = 0; row < _settings.Rows; row++)
                 {
                     var worldPos = new Vector3(
-                        _settings.OriginWorld.x + col * _settings.CellSize,
-                        _settings.OriginWorld.y + row * _settings.CellSize,
+                        _settings.FieldStartPosition.x + col * _settings.CellSize,
+                        _settings.FieldStartPosition.y + row * _settings.CellSize,
                         0f);
 
                     var cellView = await _assetService.Instantiate<CellView>(_gameContainer, token);
@@ -83,13 +78,16 @@ namespace Controller
 
         public void Dispose()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            
             _signalBus.TryUnsubscribe<OnCellStateChangedSignal>(HandleCellStateChanged);
 
             if (_cellControllers != null)
                 foreach (var c in _cellControllers)
                     c?.Dispose();
 
-            _assetService.Dispose();
         }
     }
 }

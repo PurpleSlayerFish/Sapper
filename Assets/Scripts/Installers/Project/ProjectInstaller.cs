@@ -24,8 +24,11 @@ namespace Installers.Project
                 .AsSingle();
             
             ConfigsInstaller.Install(Container);
+            // todo перенести когда будут отдельные сцены
+            SignalsInstaller.Install(Container);
             Container.Bind<UiCameraService>().AsSingle();
             Container.Bind<WindowService>().AsSingle();
+            // todo перенести когда будут отдельные сценыы
             Container.Bind<GameCycleService>().AsSingle();
 
             SignalBusInstaller.Install(Container);

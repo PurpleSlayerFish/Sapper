@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Threading;
+using Controller;
 using Cysharp.Threading.Tasks;
+using Model.Configs;
+using Model.Entities;
+using Model.Processors;
 using UI.Windows;
 using UnityEngine;
 using Zenject;
@@ -48,10 +52,7 @@ namespace Services
         {
             Container.gameObject.SetActive(true);
 
-            await WindowService.Show(
-                new MainMenuWindowData(),
-                needLoadingScreen: true,
-                token: LifetimeToken);
+            await WindowService.ShowWithLoadingScreen(new MainMenuWindowData(), token: LifetimeToken);
         }
 
         public override async UniTask Exit()
@@ -63,30 +64,67 @@ namespace Services
 
     public sealed class GameplayGameState : BaseGameState
     {
-        public GameplayGameState(Transform container, WindowService windowService, CancellationToken lifetimeToken)
+        private readonly DiContainer _container;
+
+        private GameFieldController _gameFieldController;
+        private GameFieldProcessor _gameFieldProcessor;
+        private GameFieldSettings _settings;
+        private GameFieldModel _gameModel;
+        private InputService _inputService;
+        private GameInputProcessorService _gameInputProcessorService;
+
+        public GameplayGameState(
+            Transform container,
+            WindowService windowService,
+            CancellationToken lifetimeToken,
+            DiContainer diContainer)
             : base(container, windowService, lifetimeToken)
         {
+            _container = diContainer;
         }
+
+        private const string ContainerId = "[GameContainer]";
 
         public override async UniTask Enter()
         {
+            // биндим трансформ контейнер
             Container.gameObject.SetActive(true);
+            _container.Bind<Transform>().WithId(ContainerId).FromInstance(Container).AsCached();
+            
+            await WindowService.ShowWithLoadingScreen(new GameWindowData(), false, AsyncLoad, LifetimeToken);
+        }
 
-            // TODO: инициализация игрового поля
-            // TODO: инициализация контроллера ввода
+        private async UniTask AsyncLoad()
+        {
+            _settings = _container.Resolve<GameFieldSettings>();
+            _gameModel = new GameFieldModel(_settings.Columns, _settings.Rows);
+            _container.Bind<GameFieldModel>().FromInstance(_gameModel).AsCached();
+            
+            _gameFieldController = _container.Instantiate<GameFieldController>();
+            _gameFieldProcessor = _container.Instantiate<GameFieldProcessor>();
+            _inputService = _container.Instantiate<InputService>();
+            _gameInputProcessorService = _container.Instantiate<GameInputProcessorService>();
 
-            await WindowService.Show(
-                new GameWindowData(),
-                needLoadingScreen: true,
-                token: LifetimeToken);
+            // Инициализируем вручную в нужном порядке
+            await _gameFieldController.InitAsync(LifetimeToken);
+            _gameFieldProcessor.Initialize();
+            _inputService.Initialize();
+            _gameInputProcessorService.Initialize();
         }
 
         public override async UniTask Exit()
         {
             await WindowService.Close<GameWindowData>(LifetimeToken);
+            await WindowService.Close<PauseWindowData>(LifetimeToken);
 
-            // TODO: выгрузка игрового поля
-            // TODO: выгрузка контроллера ввода
+            _gameInputProcessorService.Dispose();
+            _inputService.Dispose();
+            _gameFieldProcessor.Dispose();
+            _gameFieldController.Dispose();
+            
+            _container.UnbindId<Transform>(ContainerId);
+            _container.Unbind<GameFieldModel>();
+            _gameModel = null;
 
             Container.gameObject.SetActive(false);
         }
@@ -95,6 +133,7 @@ namespace Services
     public sealed class GameCycleService : IDisposable
     {
         [Inject] private WindowService _windowService;
+        [Inject] private DiContainer _container;
 
         private Transform _menuContainer;
         private Transform _gameContainer;
@@ -103,7 +142,7 @@ namespace Services
         private GameState _currentStateType;
         private bool _isTransitioning;
 
-        private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _lifetimeCts = new();
 
         public async UniTask InitializeAsync(CancellationToken token)
         {
@@ -111,17 +150,16 @@ namespace Services
             _menuContainer = CreateContainer("MenuContainer");
             _gameContainer = CreateContainer("GameContainer");
 
-            await TransitionTo(GameState.Menu, token);
+            await TransitionTo(GameState.Menu);
         }
 
         private static Transform CreateContainer(string name)
         {
             var go = new GameObject(name);
-            UnityEngine.Object.DontDestroyOnLoad(go);
             return go.transform;
         }
 
-        public async UniTask TransitionTo(GameState targetState, CancellationToken token = default)
+        public async UniTask TransitionTo(GameState targetState)
         {
             if (_isTransitioning || (_currentState != null && _currentStateType == targetState))
                 return;
@@ -151,7 +189,7 @@ namespace Services
         private BaseGameState CreateState(GameState state) => state switch
         {
             GameState.Menu => new MenuGameState(_menuContainer, _windowService, _lifetimeCts.Token),
-            GameState.Game => new GameplayGameState(_gameContainer, _windowService, _lifetimeCts.Token),
+            GameState.Game => new GameplayGameState(_gameContainer, _windowService, _lifetimeCts.Token, _container),
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
         };
 
