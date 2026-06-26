@@ -1,0 +1,22 @@
+build/
+.next/
+*.lock
+*.generated.*
+*.log
+
+bin/
+
+# Игнорируем системные папки Unity
+/[Lt]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Игнорируем ассеты, если они весят много, а Клоду там делать нечего
+*.unity
+*.prefab
+*.asset
+*.meta

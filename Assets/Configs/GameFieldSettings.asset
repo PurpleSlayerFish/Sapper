@@ -35,6 +35,12 @@ MonoBehaviour:
     m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     m_EditorAssetChanged: 0
+  SpriteCurrentMine:
+    m_AssetGUID: fe0558dbffcdabe4f9ffe01ba116c1f3
+    m_SubObjectName: exploded_mine
+    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+    m_EditorAssetChanged: 0
   SpriteRevealed:
     m_AssetGUID: fe0558dbffcdabe4f9ffe01ba116c1f3
     m_SubObjectName: Empty
