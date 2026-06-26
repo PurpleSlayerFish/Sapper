@@ -107,21 +107,6 @@ Packages/packages-lock.json linguist-generated
 *.mpg                   lfs
 *.ogv                   lfs
 *.wmv                   lfs
-# Images
-*.bmp                   lfs
-*.exr                   lfs
-*.gif                   lfs
-*.hdr                   lfs
-*.iff                   lfs
-*.jpeg                  lfs
-*.jpg                   lfs
-*.pict                  lfs
-*.png                   lfs
-*.psd                   lfs
-*.tga                   lfs
-*.tif                   lfs
-*.tiff                  lfs
-*.webp                  lfs
 # Compressed Archive
 *.7z                    lfs
 *.bz2                   lfs
@@ -129,10 +114,6 @@ Packages/packages-lock.json linguist-generated
 *.rar                   lfs
 *.tar                   lfs
 *.zip                   lfs
-# Compiled Dynamic Library
-*.dll                   lfs
-*.pdb                   lfs
-*.so                    lfs
 # Fonts
 *.otf                   lfs
 *.ttf                   lfs
@@ -147,21 +128,3 @@ Packages/packages-lock.json linguist-generated
 *.rns                   lfs
 # Spine export file for Unity
 *.skel.bytes            lfs
-# Exceptions for .asset files such as lightning pre-baking
-LightingData.asset     binary
-Assets/Plugins/Demigiant/DOTween/DOTween.dll !text !filter !merge !diff
-Assets/Plugins/Demigiant/DOTween/Editor/DOTweenEditor.dll !text !filter !merge !diff
-Assets/Sprites/Sapper/background.png !text !filter !merge !diff
-Assets/Sprites/Sapper/sapper_atlas.png !text !filter !merge !diff
-Assets/Sprites/UI/32_32.png !text !filter !merge !diff
-Assets/Sprites/UI/Rounded[[:space:]]32.png !text !filter !merge !diff
-Assets/TextMesh[[:space:]]Pro/Sprites/EmojiOne.png !text !filter !merge !diff
-*.png !text !filter !merge !diff
-*.jpg !text !filter !merge !diff
-*.jpeg !text !filter !merge !diff
-*.dll !text !filter !merge !diff
-*.pdb !text !filter !merge !diff
-*.fbx !text !filter !merge !diff
-*.FBX !text !filter !merge !diff
-*.ttf !text !filter !merge !diff
-*.otf !text !filter !merge !diff
