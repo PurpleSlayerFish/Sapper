@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Controller;
 using Cysharp.Threading.Tasks;
@@ -66,13 +66,16 @@ namespace Services
     public sealed class GameplayGameState : BaseGameState
     {
         private readonly DiContainer _container;
+        private readonly GameCycleService _gameCycleService;
 
         private GameFieldController _gameFieldController;
         private GameFieldProcessor _gameFieldProcessor;
         private GameFieldSettings _settings;
         private GameFieldModel _gameModel;
         private GameInputProcessorService _gameInputProcessorService;
+        private InputService _inputService;
         private SignalBus _signalBus;
+        private bool _gameOverInProgress;
         private const string ContainerId = "[GameContainer]";
         private const string WinMessage = "You win";
         private const string LoseMessage = "You lose";
@@ -81,16 +84,18 @@ namespace Services
             Transform container,
             WindowService windowService,
             CancellationToken lifetimeToken,
-            DiContainer diContainer)
+            DiContainer diContainer,
+            GameCycleService gameCycleService)
             : base(container, windowService, lifetimeToken)
         {
             _container = diContainer;
+            _gameCycleService = gameCycleService;
         }
 
 
         public override async UniTask Enter()
         {
-            
+
             await WindowService.ShowWithLoadingScreen(new GameWindowData(), LifetimeToken, AsyncLoad);
         }
 
@@ -99,28 +104,43 @@ namespace Services
             // биндим трансформ контейнер
             Container.gameObject.SetActive(true);
             _container.Bind<Transform>().WithId(ContainerId).FromInstance(Container).AsCached();
-            
+
             _settings = _container.Resolve<GameFieldSettings>();
             _signalBus = _container.Resolve<SignalBus>();
             _gameModel = new GameFieldModel(_settings.Columns, _settings.Rows);
             _container.Bind<GameFieldModel>().FromInstance(_gameModel).AsCached();
-            
+
             _gameFieldController = _container.Instantiate<GameFieldController>();
             _gameFieldProcessor = _container.Instantiate<GameFieldProcessor>();
             _gameInputProcessorService = _container.Instantiate<GameInputProcessorService>();
-            
+
+
             _signalBus.Subscribe<OnGameOverSignal>(OnGameOver);
-            
+            _signalBus.Subscribe<OnAnyKeySignal>(OnAnyKey);
+
             // Инициализируем вручную в нужном порядке
             await _gameFieldController.InitAsync(LifetimeToken);
             _gameFieldProcessor.Initialize();
             _gameInputProcessorService.Initialize();
+            
+            // Включаем мышь при каждом (пере)старте
+            _inputService = _container.Resolve<InputService>();
+            _inputService.IsActive = true;
         }
 
         private async void OnGameOver(OnGameOverSignal signal)
         {
+            _inputService.IsActive = false;
+            _gameOverInProgress = true;
             await UniTask.Delay(TimeSpan.FromSeconds(2));
-            await WindowService.Show(new GameOverWindowData(signal.IsWin ? WinMessage: LoseMessage), LifetimeToken);
+            await WindowService.Show(new GameOverWindowData(signal.IsWin ? WinMessage : LoseMessage), LifetimeToken);
+            _gameOverInProgress = false;
+        }
+
+        private void OnAnyKey()
+        {
+            if (_gameOverInProgress) return;
+            _gameCycleService.RestartGame().Forget();
         }
 
         public override async UniTask Exit()
@@ -131,11 +151,12 @@ namespace Services
             _gameInputProcessorService.Dispose();
             _gameFieldProcessor.Dispose();
             _gameFieldController.Dispose();
-            
+
             _container.UnbindId<Transform>(ContainerId);
             _container.Unbind<GameFieldModel>();
             _gameModel = null;
             _signalBus.TryUnsubscribe<OnGameOverSignal>(OnGameOver);
+            _signalBus.TryUnsubscribe<OnAnyKeySignal>(OnAnyKey);
 
             Container.gameObject.SetActive(false);
         }
@@ -175,6 +196,16 @@ namespace Services
             if (_isTransitioning || (_currentState != null && _currentStateType == targetState))
                 return;
 
+            await TransitionToCore(targetState);
+        }
+
+        public UniTask RestartGame() => TransitionToCore(GameState.Game);
+
+        private async UniTask TransitionToCore(GameState targetState)
+        {
+            if (_isTransitioning)
+                return;
+
             _isTransitioning = true;
 
             try
@@ -200,7 +231,7 @@ namespace Services
         private BaseGameState CreateState(GameState state) => state switch
         {
             GameState.Menu => new MenuGameState(_menuContainer, _windowService, _lifetimeCts.Token),
-            GameState.Game => new GameplayGameState(_gameContainer, _windowService, _lifetimeCts.Token, _container),
+            GameState.Game => new GameplayGameState(_gameContainer, _windowService, _lifetimeCts.Token, _container, this),
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
         };
 

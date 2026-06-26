@@ -11,6 +11,7 @@ namespace Installers.Scene
             Container.DeclareSignal<OnCellPointerSignal>();
             Container.DeclareSignal<OnCellStateChangedSignal>();
             Container.DeclareSignal<OnGameOverSignal>();
+            Container.DeclareSignal<OnAnyKeySignal>();
         }
     }
 }

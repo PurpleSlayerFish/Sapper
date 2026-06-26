@@ -1,8 +1,7 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Services;
 using TMPro;
 using UI.Base;
-using UnityEngine;
 using Zenject;
 
 namespace UI.Windows
@@ -20,15 +19,13 @@ namespace UI.Windows
     public class GameOverWindowView : BaseWindowView
     {
         public TMP_Text MessageText;
-        public UiButtonView RestartButton;
         public UiButtonView MainMenuButton;
+        public UiButtonView RestartButton;
     }
 
-    public class GameOverWindowController : BaseWindowController<GameOverWindowView, GameOverWindowData>, ITickable
+    public class GameOverWindowController : BaseWindowController<GameOverWindowView, GameOverWindowData>
     {
         [Inject] private GameCycleService _gameCycleService;
-        [Inject] private InputService _inputService;
-        private bool _listeningInput;
 
         [Inject]
         public GameOverWindowController(GameOverWindowView view, GameOverWindowData data) : base(view, data) { }
@@ -37,40 +34,17 @@ namespace UI.Windows
         {
             base.OnInitialize();
 
-            if (View.MessageText != null)
-                View.MessageText.text = Data.Message;
-
-            if (View.RestartButton != null)
-                Disposables.Add(View.RestartButton.Subscribe(HandleRestartClicked));
+            View.MessageText.text = Data.Message;
 
             if (View.MainMenuButton != null)
                 Disposables.Add(View.MainMenuButton.Subscribe(HandleMainMenuClicked));
             
-            _inputService.IsActive = false;
+            if (View.RestartButton != null)
+                Disposables.Add(View.RestartButton.Subscribe(HandleRestartClicked));
         }
-        
-        // Пока оставим здесь
-        protected override void OnAfterShow()
-        {
-            _listeningInput = true;
-        }
-
-        protected override void OnBeforeHide()
-        {
-            _listeningInput = false;
-        }
-
-        public void Tick()
-        {
-            if (!_listeningInput)
-                return;
-
-            if (Input.anyKeyDown)
-                HandleRestartClicked();
-        }
-
-        private void HandleRestartClicked() => _gameCycleService.TransitionTo(GameState.Game).Forget();
 
         private void HandleMainMenuClicked() => _gameCycleService.TransitionTo(GameState.Menu).Forget();
+        
+        private void HandleRestartClicked() => _gameCycleService.RestartGame().Forget();
     }
 }

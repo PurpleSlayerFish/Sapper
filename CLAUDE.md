@@ -72,3 +72,23 @@ Windows follow `BaseWindowController<TView, TData>` / `BaseWindowView`. `WindowS
 - Config: `Assets/Configs/GameFieldSettings.asset` — grid size and mine count
 - No automated tests are configured despite `com.unity.test-framework` being present
 - No CI/CD pipelines
+
+## Output format (apply to every code response)
+- Только готовый C# код, без объяснений до/после
+- Несколько файлов — каждый в отдельном блоке с именем файла в заголовке
+- Пояснения внутри кода — только короткими `//` комментариями
+
+## New code conventions
+- DI: зависимости через `[Inject]` на полях + `[Inject] void Construct()`, **не конструктор**
+- Легаси в проекте: местами конструкторы — не трогать без явной задачи
+- Тики: только `UniTask` loop, **не `ITickable`**
+- View: только публичные поля, никаких методов — вся логика в контроллере
+- Assets: загрузка только через `AssetService`, ссылки на префабы в конфигах, не во View
+- `OnAfterShow` / `OnBeforeHide`: оверрайдить полностью, `base` не вызывать (пустая)
+- Подписки на кнопки/сигналы — в `Initialize()`, через `Disposables` коллекцию
+
+## Gotchas
+- `LoadingWindowData` — пустой класс, без параметров и экшенов
+- `GameFieldController` — при рестарте пересоздавать полностью (Reset или Dispose+new), не переиспользовать
+- `Cell` — struct, доступ через `ref`, не копировать без умысла
+

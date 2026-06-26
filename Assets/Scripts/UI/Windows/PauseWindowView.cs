@@ -46,7 +46,7 @@ namespace UI.Windows
             }
         }
 
-        private void HandleRestartClicked() => _gameCycleService.TransitionTo(GameState.Game).Forget();
+        private void HandleRestartClicked() => _gameCycleService.RestartGame().Forget();
     
         private void HandleMainMenuClicked() => _gameCycleService.TransitionTo(GameState.Menu).Forget();
 

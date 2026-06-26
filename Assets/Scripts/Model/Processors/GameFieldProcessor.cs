@@ -206,10 +206,7 @@ namespace Model.Processors
 
         private void FireGameOver(bool isWin)
         {
-            // При проигрыше раскрываем все мины
-            if (!isWin)
-                RevealAllMines();
-
+            RevealAllMines();
             _signalBus.Fire(new OnGameOverSignal {IsWin = isWin});
         }
 
